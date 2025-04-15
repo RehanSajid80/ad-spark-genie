@@ -1,9 +1,10 @@
-
 export interface AdInput {
   image: File | null;
   context: string;
   brandGuidelines: string;
   landingPageUrl: string;
+  targetAudience: string;
+  topicArea: string;
 }
 
 export interface AdSuggestion {

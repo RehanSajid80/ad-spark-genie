@@ -40,6 +40,28 @@ const AdForm: React.FC<AdFormProps> = ({
 
       <div className="space-y-4">
         <div>
+          <Label htmlFor="targetAudience">Target Audience</Label>
+          <Input
+            id="targetAudience"
+            placeholder="Who is your ideal customer? (e.g., property managers, building owners)"
+            value={adInput.targetAudience}
+            onChange={(e) => handleInputChange('targetAudience', e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="topicArea">Topic Area</Label>
+          <Input
+            id="topicArea"
+            placeholder="What's the main topic? (e.g., property management, tenant communication)"
+            value={adInput.topicArea}
+            onChange={(e) => handleInputChange('topicArea', e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
           <Label htmlFor="context">Campaign Context</Label>
           <Textarea
             id="context"
@@ -76,7 +98,7 @@ const AdForm: React.FC<AdFormProps> = ({
 
       <Button 
         onClick={generateAds} 
-        disabled={isGenerating || isUploading || !adInput.context}
+        disabled={isGenerating || isUploading || !adInput.context || !adInput.targetAudience || !adInput.topicArea}
         className="w-full"
       >
         {isGenerating ? (

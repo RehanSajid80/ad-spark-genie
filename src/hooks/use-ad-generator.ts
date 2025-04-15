@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { AdInput, AdSuggestion, ChatMessage } from '../types/ad-types';
 import { generateAdSuggestions } from '../services/n8n-service';
@@ -9,7 +8,9 @@ export function useAdGenerator() {
     image: null,
     context: '',
     brandGuidelines: '',
-    landingPageUrl: ''
+    landingPageUrl: '',
+    targetAudience: '',
+    topicArea: ''
   });
   
   const [isGenerating, setIsGenerating] = useState(false);
@@ -38,7 +39,9 @@ export function useAdGenerator() {
         adInput.image,
         adInput.context,
         adInput.brandGuidelines,
-        adInput.landingPageUrl
+        adInput.landingPageUrl,
+        adInput.targetAudience,
+        adInput.topicArea
       );
       
       setSuggestions(results);
@@ -104,7 +107,9 @@ export function useAdGenerator() {
       image: null,
       context: '',
       brandGuidelines: '',
-      landingPageUrl: ''
+      landingPageUrl: '',
+      targetAudience: '',
+      topicArea: ''
     });
     setSuggestions([]);
     setSelectedSuggestion(null);
