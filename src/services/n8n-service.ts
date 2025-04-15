@@ -7,12 +7,14 @@ export const generateAdSuggestions = async (
   image: File | null,
   context: string,
   brandGuidelines: string,
-  landingPageUrl: string
+  landingPageUrl: string,
+  targetAudience: string,
+  topicArea: string
 ): Promise<AdSuggestion[]> => {
   try {
     // In a real implementation, we would send the image to n8n
     // For now, we'll simulate a response with mock data
-    console.log('Sending to n8n:', { context, brandGuidelines, landingPageUrl });
+    console.log('Sending to n8n:', { context, brandGuidelines, landingPageUrl, targetAudience, topicArea });
     
     // Simulating a network delay
     await new Promise(resolve => setTimeout(resolve, 1500));
