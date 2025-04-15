@@ -1,0 +1,95 @@
+
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { AdInput } from '@/types/ad-types';
+import ImageUploader from './ImageUploader';
+import { Loader2 } from 'lucide-react';
+
+interface AdFormProps {
+  adInput: AdInput;
+  handleInputChange: (field: keyof Omit<AdInput, 'image'>, value: string) => void;
+  handleImageChange: (file: File | null) => void;
+  generateAds: () => Promise<void>;
+  isGenerating: boolean;
+  isUploading: boolean;
+  setIsUploading: (isUploading: boolean) => void;
+}
+
+const AdForm: React.FC<AdFormProps> = ({
+  adInput,
+  handleInputChange,
+  handleImageChange,
+  generateAds,
+  isGenerating,
+  isUploading,
+  setIsUploading
+}) => {
+  return (
+    <div className="space-y-6 p-6 bg-white rounded-lg shadow-sm border border-border">
+      <div>
+        <h3 className="text-lg font-medium mb-2">Ad Image</h3>
+        <ImageUploader 
+          onImageChange={handleImageChange} 
+          setIsUploading={setIsUploading}
+          currentImage={adInput.image}
+        />
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="context">Campaign Context</Label>
+          <Textarea
+            id="context"
+            placeholder="What's the goal of your ad? What message are you trying to convey?"
+            value={adInput.context}
+            onChange={(e) => handleInputChange('context', e.target.value)}
+            className="min-h-[100px]"
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="brandGuidelines">Brand Guidelines (optional)</Label>
+          <Textarea
+            id="brandGuidelines"
+            placeholder="Any specific guidelines for colors, tone, logo usage, etc."
+            value={adInput.brandGuidelines}
+            onChange={(e) => handleInputChange('brandGuidelines', e.target.value)}
+            className="min-h-[80px]"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="landingPageUrl">Landing Page URL (optional)</Label>
+          <Input
+            id="landingPageUrl"
+            type="url"
+            placeholder="https://yourdomain.com/landing-page"
+            value={adInput.landingPageUrl}
+            onChange={(e) => handleInputChange('landingPageUrl', e.target.value)}
+          />
+        </div>
+      </div>
+
+      <Button 
+        onClick={generateAds} 
+        disabled={isGenerating || isUploading || !adInput.context}
+        className="w-full"
+      >
+        {isGenerating ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Generating Ad Suggestions...
+          </>
+        ) : (
+          'Generate Ad Suggestions'
+        )}
+      </Button>
+    </div>
+  );
+};
+
+export default AdForm;
