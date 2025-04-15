@@ -1,3 +1,4 @@
+
 import { AdSuggestion, AdCategory } from '../types/ad-types';
 
 const N8N_WEBHOOK_ENDPOINT = 'https://officespacesoftware.app.n8n.cloud/webhook-test/b2082ebf-6228-4ee7-8397-08b202baa879';
@@ -15,11 +16,34 @@ export const generateAdSuggestions = async (
     // For now, we'll simulate a response with mock data
     console.log('Sending to n8n:', { context, brandGuidelines, landingPageUrl, targetAudience, topicArea });
     
+    // Actually attempt to send data to n8n with no-cors mode to avoid CORS issues
+    try {
+      await fetch(N8N_WEBHOOK_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'no-cors', // Add this to handle CORS issues
+        body: JSON.stringify({
+          context,
+          brand_guidelines: brandGuidelines,
+          landing_page_url: landingPageUrl,
+          target_audience: targetAudience,
+          topic_area: topicArea,
+          timestamp: new Date().toISOString()
+        }),
+      });
+      console.log('Data sent to n8n successfully');
+    } catch (err) {
+      // If the fetch fails, just log it but continue with mock data
+      console.log('Non-fatal error sending to n8n:', err);
+    }
+    
     // Simulating a network delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     // Generate random suggestions
-    return generateMockSuggestions();
+    return generateMockSuggestions(targetAudience, topicArea);
   } catch (error) {
     console.error('Error generating ad suggestions:', error);
     throw new Error('Failed to generate ad suggestions');
@@ -28,25 +52,32 @@ export const generateAdSuggestions = async (
 
 export const fetchAdCategories = async (): Promise<AdCategory[]> => {
   try {
-    const response = await fetch(N8N_WEBHOOK_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        category: "Tenant Experience",
-        description: "Enhancing the experience of tenants through digital platforms and services",
-        trending_topics: [
-          "Tenant Communication Apps",
-          "Rent Payment Solutions",
-          "Building Community Platforms"
-        ],
-        timestamp: new Date().toISOString(),
-        metadata: {
-          background_style: "bg-gradient-to-r from-violet-50 to-purple-50"
-        }
-      }),
-    });
+    // Try to fetch from n8n but use no-cors to avoid CORS issues
+    try {
+      await fetch(N8N_WEBHOOK_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'no-cors', // Add this to handle CORS issues
+        body: JSON.stringify({
+          category: "Tenant Experience",
+          description: "Enhancing the experience of tenants through digital platforms and services",
+          trending_topics: [
+            "Tenant Communication Apps",
+            "Rent Payment Solutions",
+            "Building Community Platforms"
+          ],
+          timestamp: new Date().toISOString(),
+          metadata: {
+            background_style: "bg-gradient-to-r from-violet-50 to-purple-50"
+          }
+        }),
+      });
+      console.log('Categories request sent to n8n successfully');
+    } catch (err) {
+      console.log('Non-fatal error fetching from n8n:', err);
+    }
     
     // Since we're likely getting a CORS issue or no direct response from the n8n webhook,
     // let's simulate a response
@@ -104,6 +135,7 @@ export const trackPageView = async (categorySlug: string): Promise<void> => {
       headers: {
         'Content-Type': 'application/json',
       },
+      mode: 'no-cors', // Add this to handle CORS issues
       body: JSON.stringify({
         category: "Tenant Experience",
         page_view: true,
@@ -112,36 +144,40 @@ export const trackPageView = async (categorySlug: string): Promise<void> => {
         category_slug: categorySlug
       }),
     });
+    console.log('Page view tracked successfully');
   } catch (error) {
     console.error('Error tracking page view:', error);
   }
 };
 
-// Helper function to generate mock ad suggestions
-const generateMockSuggestions = (): AdSuggestion[] => {
+// Helper function to generate mock ad suggestions based on target audience and topic area
+const generateMockSuggestions = (targetAudience: string, topicArea: string): AdSuggestion[] => {
+  console.log(`Generating mock suggestions for audience: ${targetAudience}, topic: ${topicArea}`);
+  
+  // Generate customized suggestions based on the target audience and topic
   const linkedInSuggestions: AdSuggestion[] = [
     {
       id: 'li-1',
       platform: 'linkedin',
-      headline: 'Transform Your Tenant Experience Today',
-      description: 'Discover how our integrated platform enhances communication, streamlines payments, and builds community in your properties.',
-      imageRecommendation: 'Professional image showing tenants using a mobile app in a modern apartment setting',
+      headline: `Transform Your ${topicArea} Experience Today`,
+      description: `Discover how our integrated platform helps ${targetAudience} enhance communication, streamline operations, and build better experiences.`,
+      imageRecommendation: `Professional image showing ${targetAudience} using a digital solution in a modern setting`,
       dimensions: '1200 x 627 pixels'
     },
     {
       id: 'li-2',
       platform: 'linkedin',
-      headline: 'Empower Your Residents with Digital Solutions',
-      description: 'Our tenant experience platform increases satisfaction rates by 35% and reduces management overhead by 20%.',
-      imageRecommendation: 'Split-screen showing before/after of property management with digital transformation',
+      headline: `Empower ${targetAudience} with Digital ${topicArea} Solutions`,
+      description: 'Our experience platform increases satisfaction rates by 35% and reduces management overhead by 20%.',
+      imageRecommendation: `Split-screen showing before/after of ${topicArea} management with digital transformation`,
       dimensions: '1200 x 627 pixels'
     },
     {
       id: 'li-3',
       platform: 'linkedin',
-      headline: 'The Future of Property Management is Here',
-      description: 'Join 500+ property managers who have revolutionized their tenant experience with our all-in-one platform.',
-      imageRecommendation: 'Futuristic visualization of smart building with connected tenants',
+      headline: `The Future of ${topicArea} is Here`,
+      description: `Join 500+ ${targetAudience} who have revolutionized their experience with our all-in-one platform.`,
+      imageRecommendation: `Futuristic visualization of ${topicArea} with connected users`,
       dimensions: '1200 x 627 pixels'
     }
   ];
@@ -150,24 +186,24 @@ const generateMockSuggestions = (): AdSuggestion[] => {
     {
       id: 'g-1',
       platform: 'google',
-      headline: 'Tenant Experience Platform | Boost Satisfaction',
-      description: 'Streamline communications, payments & community management. Try free for 30 days!',
+      headline: `${topicArea} Platform | Boost Satisfaction`,
+      description: `Streamline ${targetAudience} experiences. Try free for 30 days!`,
       imageRecommendation: 'Clean, minimal interface of the platform with key features highlighted',
       dimensions: '1200 x 628 pixels'
     },
     {
       id: 'g-2',
       platform: 'google',
-      headline: 'Property Management Software | 35% More Efficient',
-      description: 'All-in-one solution for modern buildings. Join 10,000+ happy tenants today!',
+      headline: `${topicArea} Software | 35% More Efficient`,
+      description: `All-in-one solution for ${targetAudience}. Join 10,000+ happy users today!`,
       imageRecommendation: 'Person smiling while using the platform on mobile and desktop',
       dimensions: '1200 x 628 pixels'
     },
     {
       id: 'g-3',
       platform: 'google',
-      headline: 'Digital Tenant Portal | Easy Implementation',
-      description: 'Ready in 24 hours. Seamless integration with existing systems. Free demo.',
+      headline: `Digital ${topicArea} Portal | Easy Implementation`,
+      description: `Ready in 24 hours for ${targetAudience}. Seamless integration. Free demo.`,
       imageRecommendation: 'Screenshot of the platform dashboard with analysis metrics',
       dimensions: '1200 x 628 pixels'
     }
