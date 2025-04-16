@@ -1,6 +1,6 @@
 import { AdSuggestion, AdCategory } from '../types/ad-types';
 
-const N8N_WEBHOOK_ENDPOINT = 'https://officespacesoftware.app.n8n.cloud/webhook-test/2085cb73-1a85-4325-b16e-441bae4fc23a';
+const N8N_WEBHOOK_ENDPOINT = 'https://officespacesoftware.app.n8n.cloud/webhook-test/08c0cba4-4ad1-46ff-bf31-9bbe83261469';
 
 export const generateAdSuggestions = async (
   image: File | null,
