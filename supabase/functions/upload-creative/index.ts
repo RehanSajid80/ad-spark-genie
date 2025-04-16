@@ -15,7 +15,10 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log('Upload creative function called');
+
   try {
+    console.log('Creating Supabase client');
     const supabaseClient = createClient(
       'https://qrsxsyvowodxhrpiwjej.supabase.co',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -27,7 +30,11 @@ serve(async (req) => {
       }
     );
 
-    const { imageUrl, filename } = await req.json();
+    // Log the request payload
+    const requestBody = await req.json();
+    console.log('Request payload:', JSON.stringify(requestBody));
+
+    const { imageUrl, filename } = requestBody;
 
     if (!imageUrl || !filename) {
       throw new Error('Image URL and filename are required');
@@ -37,17 +44,26 @@ serve(async (req) => {
     // Download the image from the URL
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) {
+      console.error('Failed to fetch image, status:', imageResponse.status);
       throw new Error('Failed to fetch image from URL');
     }
 
     const imageBlob = await imageResponse.blob();
+    console.log('Image blob size:', imageBlob.size, 'bytes, type:', imageBlob.type);
+    
+    if (imageBlob.size === 0) {
+      throw new Error('Image blob is empty');
+    }
+
     const timestamp = new Date().toISOString();
     const uniqueFilename = `${timestamp}-${filename}`;
+    console.log('Generated unique filename:', uniqueFilename);
 
     console.log('Converting image to base64...');
     // Convert blob to base64
     const arrayBuffer = await imageBlob.arrayBuffer();
     const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    console.log('Base64 conversion complete, length:', base64Image.length);
 
     console.log('Uploading to Supabase Storage...');
     // Upload to Supabase Storage
@@ -64,11 +80,15 @@ serve(async (req) => {
       throw error;
     }
 
+    console.log('Upload successful, data:', data);
+
     // Get the public URL
     const { data: { publicUrl } } = supabaseClient
       .storage
       .from('ad-creatives')
       .getPublicUrl(uniqueFilename);
+
+    console.log('Public URL generated:', publicUrl);
 
     console.log('Sending to n8n webhook...');
     // Send to n8n webhook with image data
@@ -93,6 +113,8 @@ serve(async (req) => {
     } else {
       console.log('Successfully sent image data to n8n webhook');
     }
+
+    console.log('Upload process completed successfully');
 
     return new Response(
       JSON.stringify({

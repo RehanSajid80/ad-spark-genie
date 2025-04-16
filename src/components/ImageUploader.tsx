@@ -2,6 +2,7 @@
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ImageIcon, UploadIcon, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ImageUploaderProps {
   onImageChange: (file: File | null) => void;
@@ -21,12 +22,35 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     const file = e.target.files?.[0] || null;
     
     if (file) {
+      console.log("File selected:", file.name, "size:", file.size, "type:", file.type);
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+      
       setIsUploading(true);
       const reader = new FileReader();
       reader.onload = () => {
-        setPreview(reader.result as string);
+        const result = reader.result as string;
+        console.log("File loaded successfully, creating preview");
+        setPreview(result);
         setIsUploading(false);
       };
+      
+      reader.onerror = () => {
+        console.error("Error reading file:", reader.error);
+        toast.error('Error loading image');
+        setIsUploading(false);
+      };
+      
       reader.readAsDataURL(file);
       onImageChange(file);
     }
@@ -41,6 +65,29 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     onImageChange(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      
+      // Create a synthetic event to reuse the existing handler
+      const syntheticEvent = {
+        target: {
+          files: e.dataTransfer.files
+        }
+      } as unknown as React.ChangeEvent<HTMLInputElement>;
+      
+      handleFileChange(syntheticEvent);
     }
   };
 
@@ -74,10 +121,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           </p>
         </div>
       ) : (
-        <Button
-          variant="outline"
+        <div
           onClick={handleClick}
-          className="w-full h-64 border-dashed flex flex-col items-center justify-center space-y-2"
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          className="w-full h-64 border border-dashed rounded-md flex flex-col items-center justify-center space-y-2 cursor-pointer hover:bg-muted/50 transition-colors"
         >
           <ImageIcon className="h-10 w-10 text-muted-foreground" />
           <div className="flex flex-col items-center">
@@ -89,7 +137,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             </p>
           </div>
           <UploadIcon className="h-5 w-5 animate-bounce text-muted-foreground mt-4" />
-        </Button>
+        </div>
       )}
     </div>
   );
