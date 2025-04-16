@@ -103,7 +103,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
           
-          const webhookResponse = await fetch('https://officespacesoftware.app.n8n.cloud/webhook/08c0cba4-4ad1-46ff-bf31-9bbe83261469', {
+          const webhookResponse = await fetch('https://officespacesoftware.app.n8n.cloud/webhook-test/08c0cba4-4ad1-46ff-bf31-9bbe83261469', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
