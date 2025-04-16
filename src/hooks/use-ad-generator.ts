@@ -1,8 +1,6 @@
-
 import { useState } from 'react';
 import { AdInput, AdSuggestion, ChatMessage } from '../types/ad-types';
 import { generateAdSuggestions } from '../services/n8n-service';
-import { enhanceOfficeImage } from '../services/image-enhancement-service';
 import { toast } from 'sonner';
 
 export function useAdGenerator() {
@@ -20,12 +18,9 @@ export function useAdGenerator() {
   const [selectedSuggestion, setSelectedSuggestion] = useState<AdSuggestion | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [enhancedImageUrl, setEnhancedImageUrl] = useState<string | null>(null);
-  const [isEnhancingImage, setIsEnhancingImage] = useState(false);
 
   const handleImageChange = (file: File | null) => {
     setAdInput(prev => ({ ...prev, image: file }));
-    setEnhancedImageUrl(null); // Reset enhanced image when a new image is uploaded
   };
 
   const handleInputChange = (field: keyof Omit<AdInput, 'image'>, value: string) => {
@@ -39,33 +34,7 @@ export function useAdGenerator() {
     }
 
     setIsGenerating(true);
-    
     try {
-      // First, enhance the image if one is uploaded
-      if (adInput.image) {
-        try {
-          setIsEnhancingImage(true);
-          
-          // Get the image URL from Supabase storage
-          const imageUrl = await getImageUrl(adInput.image);
-          
-          const enhancedResult = await enhanceOfficeImage(
-            imageUrl,
-            adInput.targetAudience,
-            adInput.topicArea
-          );
-          
-          setEnhancedImageUrl(enhancedResult.enhancedImageUrl);
-          toast.success('Image enhanced successfully!');
-        } catch (error) {
-          console.error('Error enhancing image:', error);
-          toast.warning('Could not enhance image, but will continue generating suggestions');
-        } finally {
-          setIsEnhancingImage(false);
-        }
-      }
-      
-      // Generate ad suggestions
       const results = await generateAdSuggestions(
         adInput.image,
         adInput.context,
@@ -85,24 +54,11 @@ export function useAdGenerator() {
     }
   };
 
-  // Helper function to get image URL from File object
-  const getImageUrl = async (file: File): Promise<string> => {
-    // Either use a file-to-URL conversion or assume the file has been uploaded to Supabase
-    // and return a URL that we can send to the edge function
-    if (file.name.includes('supabase.co')) {
-      return file.name; // The file name might already be a URL
-    }
-    
-    // Create a fallback URL using object URL
-    const objectUrl = URL.createObjectURL(file);
-    return objectUrl;
-  };
-
-  const selectSuggestion = (suggestion: AdSuggestion | null) => {
+  const selectSuggestion = (suggestion: AdSuggestion) => {
     setSelectedSuggestion(suggestion);
     
     // Add initial message to chat when selecting a suggestion
-    if (suggestion && chatMessages.length === 0) {
+    if (chatMessages.length === 0) {
       const initialMessage: ChatMessage = {
         id: Date.now().toString(),
         content: `I've selected this ${suggestion.platform} ad suggestion. How can I improve it?`,
@@ -163,12 +119,10 @@ export function useAdGenerator() {
   return {
     adInput,
     isGenerating,
-    isEnhancingImage,
     suggestions,
     selectedSuggestion,
     chatMessages,
     isUploading,
-    enhancedImageUrl,
     handleImageChange,
     handleInputChange,
     generateAds,
