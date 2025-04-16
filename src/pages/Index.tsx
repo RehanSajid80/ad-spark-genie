@@ -6,6 +6,7 @@ import AdSuggestionList from '@/components/AdSuggestionList';
 import ChatBox from '@/components/ChatBox';
 import CategoryFeatures from '@/components/CategoryFeatures';
 import Header from '@/components/Header';
+import EnhancedImagePreview from '@/components/EnhancedImagePreview';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
@@ -14,10 +15,12 @@ const Index = () => {
   const {
     adInput,
     isGenerating,
+    isEnhancingImage,
     suggestions,
     selectedSuggestion,
     chatMessages,
     isUploading,
+    enhancedImageUrl,
     handleImageChange,
     handleInputChange,
     generateAds,
@@ -92,6 +95,15 @@ const Index = () => {
               </div>
             </div>
             
+            {enhancedImageUrl && (
+              <div className="mb-8">
+                <EnhancedImagePreview 
+                  enhancedImageUrl={enhancedImageUrl}
+                  isLoading={false}
+                />
+              </div>
+            )}
+            
             <AdSuggestionList 
               suggestions={suggestions}
               selectedSuggestion={selectedSuggestion}
@@ -116,10 +128,19 @@ const Index = () => {
                 handleInputChange={handleInputChange}
                 handleImageChange={handleImageChange}
                 generateAds={generateAds}
-                isGenerating={isGenerating}
+                isGenerating={isGenerating || isEnhancingImage}
                 isUploading={isUploading}
                 setIsUploading={setIsUploading}
               />
+              
+              {isEnhancingImage && (
+                <div className="mt-4">
+                  <EnhancedImagePreview 
+                    enhancedImageUrl={null}
+                    isLoading={true}
+                  />
+                </div>
+              )}
             </div>
             
             <CategoryFeatures />

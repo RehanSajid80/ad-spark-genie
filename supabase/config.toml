@@ -1,5 +1,19 @@
 
 project_id = "qrsxsyvowodxhrpiwjej"
 
-[functions.upload-creative]
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[db]
+port = 54322
+
+[realtime]
+enabled = true
+
+[storage]
+enabled = true
+
+[functions.enhance-office-image]
 verify_jwt = false
