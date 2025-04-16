@@ -6,6 +6,7 @@ import AdSuggestionList from '@/components/AdSuggestionList';
 import ChatBox from '@/components/ChatBox';
 import CategoryFeatures from '@/components/CategoryFeatures';
 import Header from '@/components/Header';
+import TestOpenAI from '@/components/TestOpenAI';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
@@ -37,6 +38,10 @@ const Index = () => {
       <Header />
 
       <main className="container py-6">
+        <div className="mb-12">
+          <TestOpenAI />
+        </div>
+        
         {showChat ? (
           // Chat/Refinement View
           <div>
