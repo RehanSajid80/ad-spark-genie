@@ -1,9 +1,10 @@
 
 import React, { useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { ImageIcon, UploadIcon, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { useImageUpload } from '@/hooks/use-image-upload';
+import { validateImage } from '@/utils/image-validation';
+import ImagePreview from './ImagePreview';
+import DragDropZone from './DragDropZone';
 
 interface ImageUploaderProps {
   onImageChange: (file: File | null) => void;
@@ -18,7 +19,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  
+  const { uploadProgress, setUploadProgress, uploadToStorage, sendToWebhook } = useImageUpload({
+    onImageChange,
+    setIsUploading
+  });
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -26,15 +31,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     if (file) {
       console.log("File selected:", file.name, "size:", file.size, "type:", file.type);
       
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file');
-        return;
-      }
-      
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size should be less than 5MB');
+      if (!validateImage(file)) {
         return;
       }
       
@@ -42,7 +39,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       setUploadProgress(10);
       
       try {
-        // Create a preview first
+        // Create a preview
         const reader = new FileReader();
         reader.onload = () => {
           const result = reader.result as string;
@@ -60,83 +57,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         
         reader.readAsDataURL(file);
         
-        // Upload directly to Supabase Storage
         const timestamp = new Date().toISOString();
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const { publicUrl, fileName } = await uploadToStorage(file);
         
-        console.log("Starting upload to Supabase storage with fileName:", fileName);
-        setUploadProgress(50);
-        
-        const { data, error } = await supabase.storage
-          .from('ad-creatives')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-          
-        if (error) {
-          console.error("Supabase storage upload error:", error);
-          toast.error(`Error uploading image: ${error.message}`);
-          setIsUploading(false);
-          setUploadProgress(0);
-          return;
-        }
-        
-        console.log("Supabase storage upload successful:", data);
-        setUploadProgress(80);
-        
-        // Get the public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('ad-creatives')
-          .getPublicUrl(fileName);
-          
-        console.log("Image uploaded to:", publicUrl);
-
-        // Send to webhook with improved error handling
-        try {
-          setUploadProgress(90);
-          // Convert blob to base64
-          const arrayBuffer = await file.arrayBuffer();
-          const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-          
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
-          
-          const webhookResponse = await fetch('https://officespacesoftware.app.n8n.cloud/webhook-test/08c0cba4-4ad1-46ff-bf31-9bbe83261469', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            signal: controller.signal,
-            body: JSON.stringify({
-              type: 'image_upload',
-              imageUrl: publicUrl,
-              filename: fileName,
-              originalFilename: file.name,
-              uploadedAt: timestamp,
-              imageData: `data:${file.type};base64,${base64Image}`,
-              mimeType: file.type
-            }),
-          });
-
-          clearTimeout(timeoutId);
-
-          if (!webhookResponse.ok) {
-            console.error('Error response from webhook:', await webhookResponse.text());
-            toast.warning('Warning: Image uploaded but webhook notification failed');
-          } else {
-            console.log('Successfully sent image data to webhook');
-            toast.success('Image uploaded and webhook notification sent');
-          }
-        } catch (webhookError) {
-          console.error('Error sending to webhook:', webhookError);
-          toast.warning('Warning: Image uploaded but webhook notification failed');
-        }
+        await sendToWebhook(publicUrl, fileName, file, timestamp);
         
         setUploadProgress(100);
-        
-        // Pass the file reference to the parent component
         onImageChange(file);
         
       } catch (err) {
@@ -175,7 +101,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
       
-      // Create a synthetic event to reuse the existing handler
       const syntheticEvent = {
         target: {
           files: e.dataTransfer.files
@@ -197,53 +122,17 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       />
       
       {preview ? (
-        <div className="relative flex flex-col">
-          <div className="w-full h-64 relative rounded-md overflow-hidden border border-border">
-            <img 
-              src={preview} 
-              alt="Preview" 
-              className="w-full h-full object-cover"
-            />
-            <button
-              onClick={handleRemoveImage}
-              className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-70 transition-all"
-              type="button"
-            >
-              <X size={16} />
-            </button>
-            
-            {uploadProgress > 0 && uploadProgress < 100 && (
-              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1">
-                <div 
-                  className="bg-green-500 h-1 transition-all duration-300" 
-                  style={{ width: `${uploadProgress}%` }}
-                />
-                <p className="text-center text-xs mt-1">{uploadProgress}% Uploaded</p>
-              </div>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground mt-2 text-center">
-            {uploadProgress === 100 ? 'Image uploaded successfully' : 'Processing image...'}
-          </p>
-        </div>
+        <ImagePreview
+          previewUrl={preview}
+          uploadProgress={uploadProgress}
+          onRemove={handleRemoveImage}
+        />
       ) : (
-        <div
+        <DragDropZone
           onClick={handleClick}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
-          className="w-full h-64 border border-dashed rounded-md flex flex-col items-center justify-center space-y-2 cursor-pointer hover:bg-muted/50 transition-colors"
-        >
-          <ImageIcon className="h-10 w-10 text-muted-foreground" />
-          <div className="flex flex-col items-center">
-            <p className="text-sm font-medium">
-              Upload Image
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Drag and drop or click to browse
-            </p>
-          </div>
-          <UploadIcon className="h-5 w-5 animate-bounce text-muted-foreground mt-4" />
-        </div>
+        />
       )}
     </div>
   );
