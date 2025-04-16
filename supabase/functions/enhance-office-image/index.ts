@@ -22,19 +22,19 @@ serve(async (req) => {
 
     console.log("Processing image enhancement for hybrid workplace:", imageUrl);
     
-    // Use OpenAI to generate a before/after image based on the original
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY is not set in environment variables');
     }
     
-    const prompt = `Create a before/after split image for workplace transformation showing the benefits of hybrid work. 
-    The left side should show a traditional office setting labeled "BEFORE", with people looking stressed and limited by fixed desks.
-    The right side should show a modern flexible workplace labeled "AFTER" with people working in collaborative spaces, some remote, and using technology to connect, looking happy and productive.
-    Use OfficeSpace software visual elements and brand colors (teal #00BFB3).
-    Include visual metrics showing increased productivity, better space utilization, and improved employee satisfaction.
-    Target audience: ${targetAudience || "Property Managers"}
-    Topic focus: ${topicArea || "Hybrid Workplace"}.`;
+    const prompt = `Create a detailed before/after split image for workplace transformation showing the benefits of hybrid work:
+    - Left side (BEFORE): Traditional office with fixed desks, people looking stressed, limited flexibility
+    - Right side (AFTER): Modern flexible workplace with collaborative spaces, remote work technology
+    - Include OfficeSpace branding colors (teal #00BFB3)
+    - Visualize metrics: Productivity increase, space utilization, employee satisfaction
+    - Target Audience: ${targetAudience || "Property Managers"}
+    - Topic: ${topicArea || "Hybrid Workplace Transformation"}
+    Style: Professional, clean, infographic-like visualization`;
 
     console.log("Sending prompt to OpenAI:", prompt);
 
@@ -62,7 +62,6 @@ serve(async (req) => {
     
     const enhancedImageUrl = openaiData.data[0].url;
     
-    // Return the URL of the enhanced image
     return new Response(
       JSON.stringify({ 
         originalImageUrl: imageUrl,
