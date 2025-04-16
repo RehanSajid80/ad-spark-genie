@@ -29,14 +29,26 @@ serve(async (req) => {
         }
       }
     );
+    
+    console.log('Service Role Key available:', !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
 
     // Log the request payload
-    const requestBody = await req.json();
-    console.log('Request payload:', JSON.stringify(requestBody));
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log('Request payload:', JSON.stringify(requestBody));
+    } catch (error) {
+      console.error('Error parsing request JSON:', error);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON payload' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const { imageUrl, filename } = requestBody;
 
     if (!imageUrl || !filename) {
+      console.error('Missing required fields:', { imageUrl: !!imageUrl, filename: !!filename });
       throw new Error('Image URL and filename are required');
     }
 
@@ -44,8 +56,8 @@ serve(async (req) => {
     // Download the image from the URL
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) {
-      console.error('Failed to fetch image, status:', imageResponse.status);
-      throw new Error('Failed to fetch image from URL');
+      console.error('Failed to fetch image, status:', imageResponse.status, 'statusText:', imageResponse.statusText);
+      throw new Error(`Failed to fetch image from URL: ${imageResponse.status} ${imageResponse.statusText}`);
     }
 
     const imageBlob = await imageResponse.blob();
@@ -59,11 +71,36 @@ serve(async (req) => {
     const uniqueFilename = `${timestamp}-${filename}`;
     console.log('Generated unique filename:', uniqueFilename);
 
-    console.log('Converting image to base64...');
-    // Convert blob to base64
-    const arrayBuffer = await imageBlob.arrayBuffer();
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-    console.log('Base64 conversion complete, length:', base64Image.length);
+    // Check if storage bucket exists
+    console.log('Checking if storage bucket exists...');
+    const { data: buckets, error: bucketsError } = await supabaseClient
+      .storage
+      .listBuckets();
+    
+    if (bucketsError) {
+      console.error('Error listing buckets:', bucketsError);
+      throw bucketsError;
+    }
+
+    console.log('Available buckets:', buckets.map(b => b.name).join(', '));
+    const adCreativesBucketExists = buckets.some(b => b.name === 'ad-creatives');
+    
+    if (!adCreativesBucketExists) {
+      console.log('Creating ad-creatives bucket...');
+      const { data, error } = await supabaseClient
+        .storage
+        .createBucket('ad-creatives', {
+          public: true
+        });
+      
+      if (error) {
+        console.error('Error creating bucket:', error);
+        throw error;
+      }
+      console.log('Bucket created successfully');
+    } else {
+      console.log('ad-creatives bucket already exists');
+    }
 
     console.log('Uploading to Supabase Storage...');
     // Upload to Supabase Storage
@@ -91,27 +128,37 @@ serve(async (req) => {
     console.log('Public URL generated:', publicUrl);
 
     console.log('Sending to n8n webhook...');
-    // Send to n8n webhook with image data
-    const webhookResponse = await fetch(N8N_WEBHOOK_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type: 'image_upload',
-        imageUrl: publicUrl,
-        filename: uniqueFilename,
-        originalFilename: filename,
-        uploadedAt: timestamp,
-        imageData: `data:${imageBlob.type};base64,${base64Image}`,
-        mimeType: imageBlob.type
-      }),
-    });
+    try {
+      // Convert blob to base64
+      const arrayBuffer = await imageBlob.arrayBuffer();
+      const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      console.log('Base64 conversion complete, length:', base64Image.length);
+      
+      // Send to n8n webhook with image data
+      const webhookResponse = await fetch(N8N_WEBHOOK_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'image_upload',
+          imageUrl: publicUrl,
+          filename: uniqueFilename,
+          originalFilename: filename,
+          uploadedAt: timestamp,
+          imageData: `data:${imageBlob.type};base64,${base64Image}`,
+          mimeType: imageBlob.type
+        }),
+      });
 
-    if (!webhookResponse.ok) {
-      console.error('Error response from n8n webhook:', await webhookResponse.text());
-    } else {
-      console.log('Successfully sent image data to n8n webhook');
+      if (!webhookResponse.ok) {
+        console.error('Error response from n8n webhook:', await webhookResponse.text());
+      } else {
+        console.log('Successfully sent image data to n8n webhook');
+      }
+    } catch (webhookError) {
+      console.error('Non-critical error sending to webhook:', webhookError);
+      // Continue processing as this is not critical
     }
 
     console.log('Upload process completed successfully');

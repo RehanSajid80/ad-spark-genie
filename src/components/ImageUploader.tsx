@@ -3,6 +3,7 @@ import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ImageIcon, UploadIcon, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ImageUploaderProps {
   onImageChange: (file: File | null) => void;
@@ -17,8 +18,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     
     if (file) {
@@ -37,22 +39,95 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       }
       
       setIsUploading(true);
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        console.log("File loaded successfully, creating preview");
-        setPreview(result);
-        setIsUploading(false);
-      };
+      setUploadProgress(10);
       
-      reader.onerror = () => {
-        console.error("Error reading file:", reader.error);
-        toast.error('Error loading image');
+      try {
+        // Create a preview first
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          console.log("File loaded successfully, creating preview");
+          setPreview(result);
+          setUploadProgress(30);
+        };
+        
+        reader.onerror = () => {
+          console.error("Error reading file:", reader.error);
+          toast.error('Error loading image');
+          setIsUploading(false);
+          setUploadProgress(0);
+        };
+        
+        reader.readAsDataURL(file);
+        
+        // Upload directly to Supabase Storage
+        const timestamp = new Date().toISOString();
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        
+        console.log("Starting upload to Supabase storage with fileName:", fileName);
+        setUploadProgress(50);
+        
+        const { data, error } = await supabase.storage
+          .from('ad-creatives')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+          
+        if (error) {
+          console.error("Supabase storage upload error:", error);
+          toast.error(`Error uploading image: ${error.message}`);
+          setIsUploading(false);
+          setUploadProgress(0);
+          return;
+        }
+        
+        console.log("Supabase storage upload successful:", data);
+        setUploadProgress(80);
+        
+        // Get the public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('ad-creatives')
+          .getPublicUrl(fileName);
+          
+        console.log("Image uploaded to:", publicUrl);
+        
+        // Now call our edge function with the image URL
+        const formData = {
+          imageUrl: publicUrl,
+          filename: file.name
+        };
+        
+        setUploadProgress(90);
+        console.log("Calling upload-creative edge function with:", formData);
+        
+        // Call the edge function
+        const { data: functionData, error: functionError } = await supabase.functions
+          .invoke('upload-creative', {
+            body: JSON.stringify(formData)
+          });
+          
+        if (functionError) {
+          console.error("Edge function error:", functionError);
+          toast.error(`Error processing image: ${functionError.message}`);
+          setIsUploading(false);
+          setUploadProgress(0);
+          return;
+        }
+        
+        console.log("Edge function response:", functionData);
+        setUploadProgress(100);
+        toast.success('Image uploaded successfully!');
+        
+        // Pass the file reference to the parent component
+        onImageChange(file);
+      } catch (err) {
+        console.error("Unexpected error during upload:", err);
+        toast.error(`Unexpected error: ${err.message || 'Unknown error'}`);
+      } finally {
         setIsUploading(false);
-      };
-      
-      reader.readAsDataURL(file);
-      onImageChange(file);
+      }
     }
   };
 
@@ -66,6 +141,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    setUploadProgress(0);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -112,12 +188,23 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             <button
               onClick={handleRemoveImage}
               className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-70 transition-all"
+              type="button"
             >
               <X size={16} />
             </button>
+            
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1">
+                <div 
+                  className="bg-green-500 h-1 transition-all duration-300" 
+                  style={{ width: `${uploadProgress}%` }}
+                />
+                <p className="text-center text-xs mt-1">{uploadProgress}% Uploaded</p>
+              </div>
+            )}
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            Image uploaded successfully
+            {uploadProgress === 100 ? 'Image uploaded successfully' : 'Processing image...'}
           </p>
         </div>
       ) : (
