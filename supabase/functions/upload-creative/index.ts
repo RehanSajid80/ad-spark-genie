@@ -33,6 +33,7 @@ serve(async (req) => {
       throw new Error('Image URL and filename are required');
     }
 
+    console.log('Fetching image from URL:', imageUrl);
     // Download the image from the URL
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) {
@@ -43,10 +44,12 @@ serve(async (req) => {
     const timestamp = new Date().toISOString();
     const uniqueFilename = `${timestamp}-${filename}`;
 
-    // Convert blob to base64 for sending to webhook
+    console.log('Converting image to base64...');
+    // Convert blob to base64
     const arrayBuffer = await imageBlob.arrayBuffer();
     const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
+    console.log('Uploading to Supabase Storage...');
     // Upload to Supabase Storage
     const { data, error } = await supabaseClient
       .storage
@@ -57,6 +60,7 @@ serve(async (req) => {
       });
 
     if (error) {
+      console.error('Supabase Storage upload error:', error);
       throw error;
     }
 
@@ -66,29 +70,29 @@ serve(async (req) => {
       .from('ad-creatives')
       .getPublicUrl(uniqueFilename);
 
+    console.log('Sending to n8n webhook...');
     // Send to n8n webhook with image data
-    try {
-      await fetch(N8N_WEBHOOK_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          imageUrl: publicUrl,
-          filename: uniqueFilename,
-          originalFilename: filename,
-          uploadedAt: timestamp,
-          imageData: `data:${imageBlob.type};base64,${base64Image}`,
-          mimeType: imageBlob.type
-        }),
-      });
-      console.log('Successfully sent image data to n8n webhook');
-    } catch (webhookError) {
-      console.error('Error sending to n8n webhook:', webhookError);
-      // Note: We don't throw this error to ensure the image is still uploaded
-    }
+    const webhookResponse = await fetch(N8N_WEBHOOK_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'image_upload',
+        imageUrl: publicUrl,
+        filename: uniqueFilename,
+        originalFilename: filename,
+        uploadedAt: timestamp,
+        imageData: `data:${imageBlob.type};base64,${base64Image}`,
+        mimeType: imageBlob.type
+      }),
+    });
 
-    console.log(`Successfully uploaded image: ${publicUrl}`);
+    if (!webhookResponse.ok) {
+      console.error('Error response from n8n webhook:', await webhookResponse.text());
+    } else {
+      console.log('Successfully sent image data to n8n webhook');
+    }
 
     return new Response(
       JSON.stringify({
@@ -102,7 +106,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error uploading image:', error);
+    console.error('Error in upload-creative function:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message 
@@ -114,4 +118,3 @@ serve(async (req) => {
     );
   }
 });
-
