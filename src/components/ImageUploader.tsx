@@ -93,38 +93,17 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           
         console.log("Image uploaded to:", publicUrl);
         
-        // Now call our edge function with the image URL
-        const formData = {
-          imageUrl: publicUrl,
-          filename: file.name
-        };
-        
-        setUploadProgress(90);
-        console.log("Calling upload-creative edge function with:", formData);
-        
-        // Call the edge function
-        const { data: functionData, error: functionError } = await supabase.functions
-          .invoke('upload-creative', {
-            body: JSON.stringify(formData)
-          });
-          
-        if (functionError) {
-          console.error("Edge function error:", functionError);
-          toast.error(`Error processing image: ${functionError.message}`);
-          setIsUploading(false);
-          setUploadProgress(0);
-          return;
-        }
-        
-        console.log("Edge function response:", functionData);
         setUploadProgress(100);
         toast.success('Image uploaded successfully!');
         
         // Pass the file reference to the parent component
         onImageChange(file);
+        
       } catch (err) {
         console.error("Unexpected error during upload:", err);
         toast.error(`Unexpected error: ${err.message || 'Unknown error'}`);
+        setIsUploading(false);
+        setUploadProgress(0);
       } finally {
         setIsUploading(false);
       }

@@ -71,8 +71,8 @@ serve(async (req) => {
     const uniqueFilename = `${timestamp}-${filename}`;
     console.log('Generated unique filename:', uniqueFilename);
 
-    // Check if storage bucket exists
-    console.log('Checking if storage bucket exists...');
+    // Log all available buckets
+    console.log('Listing all storage buckets...');
     const { data: buckets, error: bucketsError } = await supabaseClient
       .storage
       .listBuckets();
@@ -82,28 +82,10 @@ serve(async (req) => {
       throw bucketsError;
     }
 
-    console.log('Available buckets:', buckets.map(b => b.name).join(', '));
-    const adCreativesBucketExists = buckets.some(b => b.name === 'ad-creatives');
-    
-    if (!adCreativesBucketExists) {
-      console.log('Creating ad-creatives bucket...');
-      const { data, error } = await supabaseClient
-        .storage
-        .createBucket('ad-creatives', {
-          public: true
-        });
-      
-      if (error) {
-        console.error('Error creating bucket:', error);
-        throw error;
-      }
-      console.log('Bucket created successfully');
-    } else {
-      console.log('ad-creatives bucket already exists');
-    }
+    console.log('Available buckets:', buckets?.map(b => b.name).join(', ') || 'None');
 
-    console.log('Uploading to Supabase Storage...');
     // Upload to Supabase Storage
+    console.log('Uploading to Supabase Storage bucket ad-creatives...');
     const { data, error } = await supabaseClient
       .storage
       .from('ad-creatives')
