@@ -93,18 +93,22 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           
         console.log("Image uploaded to:", publicUrl);
 
-        // Send to webhook
+        // Send to webhook with improved error handling
         try {
           setUploadProgress(90);
           // Convert blob to base64
           const arrayBuffer = await file.arrayBuffer();
           const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
           
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
+          
           const webhookResponse = await fetch('https://officespacesoftware.app.n8n.cloud/webhook/08c0cba4-4ad1-46ff-bf31-9bbe83261469', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
+            signal: controller.signal,
             body: JSON.stringify({
               type: 'image_upload',
               imageUrl: publicUrl,
@@ -116,19 +120,21 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             }),
           });
 
+          clearTimeout(timeoutId);
+
           if (!webhookResponse.ok) {
             console.error('Error response from webhook:', await webhookResponse.text());
-            toast.error('Warning: Image uploaded but webhook notification failed');
+            toast.warning('Warning: Image uploaded but webhook notification failed');
           } else {
             console.log('Successfully sent image data to webhook');
+            toast.success('Image uploaded and webhook notification sent');
           }
         } catch (webhookError) {
           console.error('Error sending to webhook:', webhookError);
-          toast.error('Warning: Image uploaded but webhook notification failed');
+          toast.warning('Warning: Image uploaded but webhook notification failed');
         }
         
         setUploadProgress(100);
-        toast.success('Image uploaded successfully!');
         
         // Pass the file reference to the parent component
         onImageChange(file);
