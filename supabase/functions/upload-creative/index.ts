@@ -43,6 +43,10 @@ serve(async (req) => {
     const timestamp = new Date().toISOString();
     const uniqueFilename = `${timestamp}-${filename}`;
 
+    // Convert blob to base64 for sending to webhook
+    const arrayBuffer = await imageBlob.arrayBuffer();
+    const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+
     // Upload to Supabase Storage
     const { data, error } = await supabaseClient
       .storage
@@ -62,7 +66,7 @@ serve(async (req) => {
       .from('ad-creatives')
       .getPublicUrl(uniqueFilename);
 
-    // Send to n8n webhook
+    // Send to n8n webhook with image data
     try {
       await fetch(N8N_WEBHOOK_ENDPOINT, {
         method: 'POST',
@@ -74,10 +78,12 @@ serve(async (req) => {
           filename: uniqueFilename,
           originalFilename: filename,
           uploadedAt: timestamp,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          imageData: `data:${imageBlob.type};base64,${base64Image}`,
+          mimeType: imageBlob.type
         }),
       });
-      console.log('Successfully sent image details to n8n webhook');
+      console.log('Successfully sent image data to n8n webhook');
     } catch (webhookError) {
       console.error('Error sending to n8n webhook:', webhookError);
       // Note: We don't throw this error to ensure the image is still uploaded
