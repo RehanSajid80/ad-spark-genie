@@ -1,7 +1,6 @@
-
 import { AdSuggestion, AdCategory } from '../types/ad-types';
 
-const N8N_WEBHOOK_ENDPOINT = 'https://officespacesoftware.app.n8n.cloud/webhook-test/b2082ebf-6228-4ee7-8397-08b202baa879';
+const N8N_WEBHOOK_ENDPOINT = 'https://officespacesoftware.app.n8n.cloud/webhook-test/2085cb73-1a85-4325-b16e-441bae4fc23a';
 
 export const generateAdSuggestions = async (
   image: File | null,
@@ -12,38 +11,38 @@ export const generateAdSuggestions = async (
   topicArea: string
 ): Promise<AdSuggestion[]> => {
   try {
-    // In a real implementation, we would send the image to n8n
-    // For now, we'll simulate a response with mock data
-    console.log('Sending to n8n:', { context, brandGuidelines, landingPageUrl, targetAudience, topicArea });
+    // Generate mock suggestions first
+    const suggestions = generateMockSuggestions(targetAudience, topicArea);
     
-    // Actually attempt to send data to n8n with no-cors mode to avoid CORS issues
+    // Send both input and generated suggestions to webhook
     try {
       await fetch(N8N_WEBHOOK_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        mode: 'no-cors', // Add this to handle CORS issues
+        mode: 'no-cors',
         body: JSON.stringify({
-          context,
-          brand_guidelines: brandGuidelines,
-          landing_page_url: landingPageUrl,
-          target_audience: targetAudience,
-          topic_area: topicArea,
-          timestamp: new Date().toISOString()
+          input: {
+            context,
+            brand_guidelines: brandGuidelines,
+            landing_page_url: landingPageUrl,
+            target_audience: targetAudience,
+            topic_area: topicArea,
+            timestamp: new Date().toISOString()
+          },
+          generated_suggestions: suggestions
         }),
       });
-      console.log('Data sent to n8n successfully');
+      console.log('Data and suggestions sent to n8n successfully');
     } catch (err) {
-      // If the fetch fails, just log it but continue with mock data
       console.log('Non-fatal error sending to n8n:', err);
     }
     
     // Simulating a network delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Generate random suggestions
-    return generateMockSuggestions(targetAudience, topicArea);
+    return suggestions;
   } catch (error) {
     console.error('Error generating ad suggestions:', error);
     throw new Error('Failed to generate ad suggestions');
@@ -59,7 +58,7 @@ export const fetchAdCategories = async (): Promise<AdCategory[]> => {
         headers: {
           'Content-Type': 'application/json',
         },
-        mode: 'no-cors', // Add this to handle CORS issues
+        mode: 'no-cors',
         body: JSON.stringify({
           category: "Tenant Experience",
           description: "Enhancing the experience of tenants through digital platforms and services",
@@ -135,7 +134,7 @@ export const trackPageView = async (categorySlug: string): Promise<void> => {
       headers: {
         'Content-Type': 'application/json',
       },
-      mode: 'no-cors', // Add this to handle CORS issues
+      mode: 'no-cors',
       body: JSON.stringify({
         category: "Tenant Experience",
         page_view: true,
