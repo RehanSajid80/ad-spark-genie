@@ -2,6 +2,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 
+const N8N_WEBHOOK_ENDPOINT = 'https://officespacesoftware.app.n8n.cloud/webhook-test/08c0cba4-4ad1-46ff-bf31-9bbe83261469';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -59,6 +61,27 @@ serve(async (req) => {
       .storage
       .from('ad-creatives')
       .getPublicUrl(uniqueFilename);
+
+    // Send to n8n webhook
+    try {
+      await fetch(N8N_WEBHOOK_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrl: publicUrl,
+          filename: uniqueFilename,
+          originalFilename: filename,
+          uploadedAt: timestamp,
+          timestamp: new Date().toISOString()
+        }),
+      });
+      console.log('Successfully sent image details to n8n webhook');
+    } catch (webhookError) {
+      console.error('Error sending to n8n webhook:', webhookError);
+      // Note: We don't throw this error to ensure the image is still uploaded
+    }
 
     console.log(`Successfully uploaded image: ${publicUrl}`);
 
