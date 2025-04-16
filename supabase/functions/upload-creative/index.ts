@@ -78,7 +78,6 @@ serve(async (req) => {
           filename: uniqueFilename,
           originalFilename: filename,
           uploadedAt: timestamp,
-          timestamp: new Date().toISOString(),
           imageData: `data:${imageBlob.type};base64,${base64Image}`,
           mimeType: imageBlob.type
         }),
@@ -115,3 +114,4 @@ serve(async (req) => {
     );
   }
 });
+
