@@ -92,6 +92,40 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           .getPublicUrl(fileName);
           
         console.log("Image uploaded to:", publicUrl);
+
+        // Send to webhook
+        try {
+          setUploadProgress(90);
+          // Convert blob to base64
+          const arrayBuffer = await file.arrayBuffer();
+          const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+          
+          const webhookResponse = await fetch('https://officespacesoftware.app.n8n.cloud/webhook/08c0cba4-4ad1-46ff-bf31-9bbe83261469', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: 'image_upload',
+              imageUrl: publicUrl,
+              filename: fileName,
+              originalFilename: file.name,
+              uploadedAt: timestamp,
+              imageData: `data:${file.type};base64,${base64Image}`,
+              mimeType: file.type
+            }),
+          });
+
+          if (!webhookResponse.ok) {
+            console.error('Error response from webhook:', await webhookResponse.text());
+            toast.error('Warning: Image uploaded but webhook notification failed');
+          } else {
+            console.log('Successfully sent image data to webhook');
+          }
+        } catch (webhookError) {
+          console.error('Error sending to webhook:', webhookError);
+          toast.error('Warning: Image uploaded but webhook notification failed');
+        }
         
         setUploadProgress(100);
         toast.success('Image uploaded successfully!');
