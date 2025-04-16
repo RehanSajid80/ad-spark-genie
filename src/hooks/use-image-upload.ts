@@ -48,8 +48,6 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
   const sendToWebhook = async (publicUrl: string, fileName: string, file: File, timestamp: string) => {
     try {
       setUploadProgress(90);
-      const arrayBuffer = await file.arrayBuffer();
-      const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -66,8 +64,11 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
           filename: fileName,
           originalFilename: file.name,
           uploadedAt: timestamp,
-          imageData: `data:${file.type};base64,${base64Image}`,
-          mimeType: file.type
+          metadata: {
+            size: file.size,
+            type: file.type,
+            lastModified: file.lastModified
+          }
         }),
       });
 
