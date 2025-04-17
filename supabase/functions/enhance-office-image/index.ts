@@ -31,56 +31,67 @@ serve(async (req) => {
     - Right side (AFTER): Modern Boston property management using OfficeSpace software with flexible workspaces, digital dashboards, happy staff. Include metrics showing reduced vacancy (only 50 vacancies), optimized space usage (1,500 capacity), and increased efficiency.
     - Include Boston skyline elements and OfficeSpace branding colors (teal #00BFB3)
     - Add specific Boston property details: "Boston HQ - $740,000 Annual Lease"
-    - Target Audience: Property Managers in Boston
-    - Topic: Smart Space Optimization for Boston Commercial Properties
+    - Target Audience: ${targetAudience || "Property Managers in Boston"}
+    - Topic: ${topicArea || "Smart Space Optimization for Boston Commercial Properties"}
     Style: Professional, corporate, data-driven visualization with clear "BEFORE" and "AFTER" labels`;
 
     console.log("Sending Boston-specific prompt to OpenAI:", prompt);
 
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: prompt,
-        n: 1,
-        size: "1024x1024",
-        quality: "standard",
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error("OpenAI API error:", errorData);
-      throw new Error(`OpenAI API error: ${response.status} ${errorData}`);
+    try {
+      const response = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "dall-e-3",
+          prompt: prompt,
+          n: 1,
+          size: "1024x1024",
+          quality: "standard",
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error("OpenAI API error:", errorData);
+        throw new Error(`OpenAI API error: ${response.status} ${errorData}`);
+      }
+      
+      const openaiData = await response.json();
+      console.log("OpenAI response received:", JSON.stringify(openaiData).substring(0, 200) + "...");
+      
+      if (!openaiData.data || openaiData.data.length === 0 || !openaiData.data[0].url) {
+        console.error("Unexpected OpenAI response format:", openaiData);
+        throw new Error('Invalid response from OpenAI API');
+      }
+      
+      const enhancedImageUrl = openaiData.data[0].url;
+      
+      return new Response(
+        JSON.stringify({ 
+          originalImageUrl: imageUrl,
+          enhancedImageUrl: enhancedImageUrl,
+          targetAudience: targetAudience || "Property Managers in Boston",
+          topicArea: topicArea || "Smart Space Optimization" 
+        }), 
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (error) {
+      console.error("OpenAI API error:", error);
+      throw error;
     }
-    
-    const openaiData = await response.json();
-    console.log("OpenAI response received:", JSON.stringify(openaiData).substring(0, 200) + "...");
-    
-    if (!openaiData.data || openaiData.data.length === 0 || !openaiData.data[0].url) {
-      console.error("Unexpected OpenAI response format:", openaiData);
-      throw new Error('Invalid response from OpenAI API');
-    }
-    
-    const enhancedImageUrl = openaiData.data[0].url;
-    
-    return new Response(
-      JSON.stringify({ 
-        originalImageUrl: imageUrl,
-        enhancedImageUrl: enhancedImageUrl,
-        targetAudience: targetAudience || "Property Managers in Boston",
-        topicArea: topicArea || "Smart Space Optimization" 
-      }), 
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
     console.error("Error enhancing image:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "An unknown error occurred" }),
+      JSON.stringify({ 
+        error: error.message || "An unknown error occurred",
+        originalImageUrl: "",
+        enhancedImageUrl: "",
+        targetAudience: "",
+        topicArea: "" 
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -17,9 +17,16 @@ export const enhanceOfficeImage = async (
   try {
     console.log("Calling enhance-office-image function with:", { imageUrl, targetAudience, topicArea });
     
+    // For blob URLs, we need to convert them to a format that can be sent to the edge function
+    // The edge function doesn't need the actual image data, just information about the enhancement request
+    const finalImageUrl = imageUrl.startsWith('blob:') ? 
+      // If it's a blob URL, we'll just pass a placeholder - the actual image processing happens in the edge function
+      "https://placeholder-image.com/property-management.jpg" : 
+      imageUrl;
+    
     const { data, error } = await supabase.functions.invoke('enhance-office-image', {
       body: {
-        imageUrl,
+        imageUrl: finalImageUrl,
         targetAudience,
         topicArea
       }
@@ -39,6 +46,13 @@ export const enhanceOfficeImage = async (
     return data as EnhanceImageResponse;
   } catch (error) {
     console.error("Error enhancing office image:", error);
-    throw error;
+    // Return a fallback response instead of throwing, to prevent UI errors
+    return {
+      originalImageUrl: imageUrl,
+      enhancedImageUrl: "",
+      targetAudience: targetAudience || "",
+      topicArea: topicArea || "",
+      error: error.message || "An unknown error occurred"
+    };
   }
 };

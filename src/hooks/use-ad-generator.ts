@@ -21,12 +21,14 @@ export function useAdGenerator() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [enhancedImage, setEnhancedImage] = useState<string | null>(null);
+  const [enhancedImageError, setEnhancedImageError] = useState<string | undefined>(undefined);
   const [isEnhancingImage, setIsEnhancingImage] = useState(false);
 
   const handleImageChange = (file: File | null) => {
     setAdInput(prev => ({ ...prev, image: file }));
     // Clear enhanced image when original image changes
     setEnhancedImage(null);
+    setEnhancedImageError(undefined);
   };
 
   const handleInputChange = (field: keyof Omit<AdInput, 'image'>, value: string) => {
@@ -49,6 +51,8 @@ export function useAdGenerator() {
     }
 
     setIsGenerating(true);
+    setEnhancedImageError(undefined);
+    
     try {
       // Generate ad suggestions
       const results = await generateAdSuggestions(
@@ -74,11 +78,17 @@ export function useAdGenerator() {
             adInput.topicArea || "Smart Space Optimization"
           );
           
-          if (enhancedResult.enhancedImageUrl) {
+          if (enhancedResult.error) {
+            setEnhancedImageError(enhancedResult.error);
+            toast.error('Image enhancement failed. Please try again.');
+          } else if (enhancedResult.enhancedImageUrl) {
             setEnhancedImage(enhancedResult.enhancedImageUrl);
+          } else {
+            setEnhancedImageError('No enhanced image was generated');
           }
         } catch (enhanceError) {
           console.error('Error enhancing image:', enhanceError);
+          setEnhancedImageError(enhanceError.message || 'Could not generate enhanced before/after image');
           toast.error('Could not generate enhanced before/after image');
         } finally {
           setIsEnhancingImage(false);
@@ -165,6 +175,7 @@ export function useAdGenerator() {
     chatMessages,
     isUploading,
     enhancedImage,
+    enhancedImageError,
     isEnhancingImage,
     handleImageChange,
     handleInputChange,

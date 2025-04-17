@@ -20,6 +20,7 @@ const Index = () => {
     chatMessages,
     isUploading,
     enhancedImage,
+    enhancedImageError,
     isEnhancingImage,
     handleImageChange,
     handleInputChange,
@@ -95,11 +96,12 @@ const Index = () => {
               </div>
             </div>
             
-            {enhancedImage && (
+            {(enhancedImage || isEnhancingImage || enhancedImageError) && (
               <div className="mb-8">
                 <EnhancedImageDisplay 
                   enhancedImageUrl={enhancedImage}
-                  isLoading={false}
+                  isLoading={isEnhancingImage}
+                  error={enhancedImageError}
                 />
               </div>
             )}
