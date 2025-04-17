@@ -3,3 +3,6 @@ project_id = "qrsxsyvowodxhrpiwjej"
 
 [functions.upload-creative]
 verify_jwt = false
+
+[functions.enhance-office-image]
+verify_jwt = false

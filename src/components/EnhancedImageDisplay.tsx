@@ -1,0 +1,54 @@
+
+import React from 'react';
+import { Skeleton } from './ui/skeleton';
+
+interface EnhancedImageDisplayProps {
+  enhancedImageUrl: string | null;
+  isLoading: boolean;
+}
+
+const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({ 
+  enhancedImageUrl,
+  isLoading
+}) => {
+  if (isLoading) {
+    return (
+      <div className="rounded-lg overflow-hidden border border-border bg-card">
+        <div className="p-4 bg-muted/30">
+          <h3 className="text-lg font-semibold mb-2">Generating Before/After Visualization</h3>
+          <p className="text-sm text-muted-foreground mb-4">Creating a transformation image for Boston property managers...</p>
+          <Skeleton className="w-full h-[300px] rounded-md" />
+          <div className="mt-2 flex justify-center">
+            <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
+            <span className="ml-2 text-xs text-muted-foreground">This may take a minute...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!enhancedImageUrl) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-lg overflow-hidden border border-border bg-card">
+      <div className="p-4 bg-muted/30">
+        <h3 className="text-lg font-semibold mb-2">Before/After Transformation</h3>
+        <p className="text-sm text-muted-foreground mb-4">Visualization for Boston property managers</p>
+      </div>
+      <div className="p-4">
+        <img 
+          src={enhancedImageUrl} 
+          alt="Before and After Transformation" 
+          className="w-full rounded-md"
+        />
+        <p className="text-xs text-muted-foreground mt-2 text-center">
+          AI-generated visualization based on your property management context
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default EnhancedImageDisplay;

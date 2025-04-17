@@ -1,6 +1,8 @@
+
 import { useState } from 'react';
 import { AdInput, AdSuggestion, ChatMessage } from '../types/ad-types';
 import { generateAdSuggestions } from '../services/n8n-service';
+import { enhanceOfficeImage } from '../services/enhance-image-service';
 import { toast } from 'sonner';
 
 export function useAdGenerator() {
@@ -18,9 +20,13 @@ export function useAdGenerator() {
   const [selectedSuggestion, setSelectedSuggestion] = useState<AdSuggestion | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [enhancedImage, setEnhancedImage] = useState<string | null>(null);
+  const [isEnhancingImage, setIsEnhancingImage] = useState(false);
 
   const handleImageChange = (file: File | null) => {
     setAdInput(prev => ({ ...prev, image: file }));
+    // Clear enhanced image when original image changes
+    setEnhancedImage(null);
   };
 
   const handleInputChange = (field: keyof Omit<AdInput, 'image'>, value: string) => {
@@ -33,18 +39,52 @@ export function useAdGenerator() {
       return;
     }
 
+    // For demo purposes, always set targetAudience to "Property Managers in Boston"
+    if (!adInput.targetAudience) {
+      setAdInput(prev => ({ 
+        ...prev, 
+        targetAudience: "Property Managers in Boston",
+        topicArea: prev.topicArea || "Smart Space Optimization"
+      }));
+    }
+
     setIsGenerating(true);
     try {
+      // Generate ad suggestions
       const results = await generateAdSuggestions(
         adInput.image,
         adInput.context,
         adInput.brandGuidelines,
         adInput.landingPageUrl,
-        adInput.targetAudience,
-        adInput.topicArea
+        adInput.targetAudience || "Property Managers in Boston",
+        adInput.topicArea || "Smart Space Optimization"
       );
       
       setSuggestions(results);
+      
+      // If we have an image, enhance it with before/after transformation
+      if (adInput.image) {
+        try {
+          setIsEnhancingImage(true);
+          const imageUrl = URL.createObjectURL(adInput.image);
+          
+          const enhancedResult = await enhanceOfficeImage(
+            imageUrl,
+            adInput.targetAudience || "Property Managers in Boston",
+            adInput.topicArea || "Smart Space Optimization"
+          );
+          
+          if (enhancedResult.enhancedImageUrl) {
+            setEnhancedImage(enhancedResult.enhancedImageUrl);
+          }
+        } catch (enhanceError) {
+          console.error('Error enhancing image:', enhanceError);
+          toast.error('Could not generate enhanced before/after image');
+        } finally {
+          setIsEnhancingImage(false);
+        }
+      }
+      
       toast.success('Ad suggestions generated successfully!');
     } catch (error) {
       console.error('Error generating ads:', error);
@@ -54,11 +94,11 @@ export function useAdGenerator() {
     }
   };
 
-  const selectSuggestion = (suggestion: AdSuggestion) => {
+  const selectSuggestion = (suggestion: AdSuggestion | null) => {
     setSelectedSuggestion(suggestion);
     
     // Add initial message to chat when selecting a suggestion
-    if (chatMessages.length === 0) {
+    if (suggestion && chatMessages.length === 0) {
       const initialMessage: ChatMessage = {
         id: Date.now().toString(),
         content: `I've selected this ${suggestion.platform} ad suggestion. How can I improve it?`,
@@ -114,6 +154,7 @@ export function useAdGenerator() {
     setSuggestions([]);
     setSelectedSuggestion(null);
     setChatMessages([]);
+    setEnhancedImage(null);
   };
 
   return {
@@ -123,6 +164,8 @@ export function useAdGenerator() {
     selectedSuggestion,
     chatMessages,
     isUploading,
+    enhancedImage,
+    isEnhancingImage,
     handleImageChange,
     handleInputChange,
     generateAds,
