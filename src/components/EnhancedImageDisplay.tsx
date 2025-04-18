@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { Skeleton } from './ui/skeleton';
 import { AlertCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EnhancedImageDisplayProps {
   enhancedImageUrl: string | null;
@@ -14,8 +14,10 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
   isLoading,
   error
 }) => {
-  // Guaranteed path to our static image that exists in the project
-  const staticImagePath = "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png";
+  // Get the fallback image URL from Supabase storage
+  const { data: { publicUrl: staticImagePath } } = supabase.storage
+    .from('ad-images')
+    .getPublicUrl('fe5191ed-c13f-46de-82f5-d7f002838091.png');
 
   if (isLoading) {
     return (
@@ -76,4 +78,3 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
 };
 
 export default EnhancedImageDisplay;
-

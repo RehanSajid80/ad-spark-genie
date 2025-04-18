@@ -22,34 +22,27 @@ export const enhanceOfficeImage = async (
   try {
     console.log("Enhancing image with URL:", imageUrl);
     
-    // Static image path that we know exists in the project
-    const beforeAfterTemplateUrl = "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png";
+    // Get the public URL for the before/after template from Supabase storage
+    const { data: { publicUrl } } = supabase.storage
+      .from('ad-images')
+      .getPublicUrl('fe5191ed-c13f-46de-82f5-d7f002838091.png');
     
-    console.log("Using before/after template:", beforeAfterTemplateUrl);
+    console.log("Using before/after template from Supabase storage:", publicUrl);
     
     // Return sizes of the before/after template
     const sizes = {
-      small: beforeAfterTemplateUrl,
-      medium: beforeAfterTemplateUrl,
-      large: beforeAfterTemplateUrl,
+      small: publicUrl,
+      medium: publicUrl,
+      large: publicUrl,
     };
 
     // Update the target audience and topic area to match the facility managers focus
     const facilityAudience = "Facility Managers";
     const facilityTopic = "Asset Management";
 
-    // Log to verify the response data
-    console.log("Returning enhanced image data:", {
-      originalImageUrl: imageUrl,
-      enhancedImageUrl: beforeAfterTemplateUrl,
-      targetAudience: facilityAudience,
-      topicArea: facilityTopic,
-      beforeAfterImage: sizes
-    });
-
     return {
       originalImageUrl: imageUrl,
-      enhancedImageUrl: beforeAfterTemplateUrl,
+      enhancedImageUrl: publicUrl,
       targetAudience: facilityAudience,
       topicArea: facilityTopic,
       beforeAfterImage: sizes
@@ -58,7 +51,7 @@ export const enhanceOfficeImage = async (
     console.error("Error in enhanceOfficeImage:", error);
     return {
       originalImageUrl: imageUrl,
-      enhancedImageUrl: "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png", // Fallback to the static image
+      enhancedImageUrl: imageUrl, // Use original image as fallback
       targetAudience: targetAudience || "Facility Managers",
       topicArea: topicArea || "Asset Management",
       error: error instanceof Error ? error.message : "Unknown error occurred"

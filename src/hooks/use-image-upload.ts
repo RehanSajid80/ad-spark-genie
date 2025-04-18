@@ -21,7 +21,7 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
       setUploadProgress(50);
       
       const { data, error } = await supabase.storage
-        .from('ad-creatives')
+        .from('ad-images')
         .upload(fileName, file, {
           cacheControl: '3600',
           upsert: false
@@ -35,7 +35,7 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
       setUploadProgress(80);
       
       const { data: { publicUrl } } = supabase.storage
-        .from('ad-creatives')
+        .from('ad-images')
         .getPublicUrl(fileName);
         
       return { publicUrl, fileName };
