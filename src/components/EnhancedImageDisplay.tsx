@@ -14,6 +14,9 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
   isLoading,
   error
 }) => {
+  // Always use the hardcoded path to ensure the image displays
+  const defaultImageUrl = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
+
   if (isLoading) {
     return (
       <div className="rounded-lg overflow-hidden border border-border bg-card">
@@ -48,9 +51,6 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
     return null;
   }
 
-  // Always use the hardcoded path to ensure the image displays
-  const imageUrl = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
-
   return (
     <div className="rounded-lg overflow-hidden border border-border bg-card">
       <div className="p-4 bg-muted/30">
@@ -59,7 +59,7 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
       </div>
       <div className="p-4">
         <img 
-          src={imageUrl} 
+          src={defaultImageUrl} 
           alt="Before and After Transformation" 
           className="w-full rounded-md"
           onError={(e) => {
@@ -67,7 +67,7 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
             // Fallback approach
             const imgElement = e.target as HTMLImageElement;
             imgElement.onerror = null; // Prevent infinite recursion
-            imgElement.src = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
+            imgElement.src = defaultImageUrl;
           }}
         />
         <p className="text-xs text-muted-foreground mt-2 text-center">

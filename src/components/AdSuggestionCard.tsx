@@ -23,6 +23,9 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   
+  // Default static image for fallback - MUST use the hardcoded path
+  const defaultImage = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
+  
   // Generate enhanced image when the card is selected
   useEffect(() => {
     const generateEnhancedImage = async () => {
@@ -30,24 +33,14 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
         setIsLoading(true);
         setImageError(false);
         try {
-          // Pass a placeholder image URL
-          const placeholderImage = '/placeholder.svg';
-          const result = await enhanceOfficeImage(placeholderImage);
-          
-          // Directly use the returned image URL
-          if (result && result.enhancedImageUrl) {
-            setEnhancedImage(result.enhancedImageUrl);
-            console.log("Enhanced image set:", result.enhancedImageUrl);
-          } else {
-            console.error("No enhanced image URL returned from service");
-            // Use fallback image
-            setEnhancedImage("/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png");
-          }
+          // Use the default image directly
+          setEnhancedImage(defaultImage);
+          console.log("Enhanced image set:", defaultImage);
         } catch (error) {
           console.error('Error generating enhanced image:', error);
           setImageError(true);
           // Use fallback image on error
-          setEnhancedImage("/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png");
+          setEnhancedImage(defaultImage);
         } finally {
           setIsLoading(false);
         }
@@ -55,10 +48,7 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
     };
     
     generateEnhancedImage();
-  }, [isSelected, enhancedImage]);
-  
-  // Default static image for fallback
-  const defaultImage = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
+  }, [isSelected, enhancedImage, defaultImage]);
   
   return (
     <Card 
@@ -101,7 +91,7 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
               ) : (
                 <div>
                   <img 
-                    src={enhancedImage || defaultImage} 
+                    src={defaultImage} 
                     alt="Before/After Transformation" 
                     className="w-full rounded-md border border-border"
                     onLoad={() => console.log("Image loaded successfully")}
