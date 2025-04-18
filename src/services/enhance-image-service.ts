@@ -22,10 +22,13 @@ export const enhanceOfficeImage = async (
   try {
     console.log("Enhancing image with URL:", imageUrl);
     
+    // Upload and use the new before/after template image
+    const fileName = '32455e0f-c91f-4dce-ae71-9f815d8df69f.png';
+    
     // Get the public URL for the before/after template from Supabase storage
     const { data: { publicUrl } } = supabase.storage
       .from('ad-images')
-      .getPublicUrl('85110a2d-ffb5-415d-91f3-871a12edd96d.png');
+      .getPublicUrl(fileName);
     
     console.log("Using before/after template from Supabase storage:", publicUrl);
     

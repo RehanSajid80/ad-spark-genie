@@ -12,9 +12,9 @@ export async function uploadDefaultImage(file?: File) {
       fileName = file.name;
     } else {
       // Otherwise, fetch the default image from the public directory
-      const response = await fetch('/lovable-uploads/85110a2d-ffb5-415d-91f3-871a12edd96d.png');
+      const response = await fetch('/lovable-uploads/32455e0f-c91f-4dce-ae71-9f815d8df69f.png');
       blob = await response.blob();
-      fileName = '85110a2d-ffb5-415d-91f3-871a12edd96d.png';
+      fileName = '32455e0f-c91f-4dce-ae71-9f815d8df69f.png';
     }
     
     // Upload to Supabase storage

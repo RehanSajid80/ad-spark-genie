@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Skeleton } from './ui/skeleton';
 import { AlertCircle } from 'lucide-react';
@@ -17,7 +18,7 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
   // Get the fallback image URL from Supabase storage
   const { data: { publicUrl: staticImagePath } } = supabase.storage
     .from('ad-images')
-    .getPublicUrl('fe5191ed-c13f-46de-82f5-d7f002838091.png');
+    .getPublicUrl('32455e0f-c91f-4dce-ae71-9f815d8df69f.png');
 
   if (isLoading) {
     return (

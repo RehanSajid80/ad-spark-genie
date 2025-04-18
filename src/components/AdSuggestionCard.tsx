@@ -23,8 +23,8 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   
-  // Guaranteed path to our static image that exists in the project
-  const staticImagePath = "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png";
+  // Use the new before/after image
+  const staticImagePath = "/lovable-uploads/32455e0f-c91f-4dce-ae71-9f815d8df69f.png";
   
   // Generate enhanced image when the card is selected
   useEffect(() => {
