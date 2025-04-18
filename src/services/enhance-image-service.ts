@@ -19,24 +19,35 @@ export const enhanceOfficeImage = async (
   targetAudience?: string,
   topicArea?: string
 ): Promise<EnhanceImageResponse> => {
-  // Use the new uploaded before/after comparison image
-  const beforeAfterTemplateUrl = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
-  
-  // Log that we're using this template
-  console.log("Using before/after template:", beforeAfterTemplateUrl);
-  
-  // Return sizes of the before/after template
-  const sizes = {
-    small: beforeAfterTemplateUrl,
-    medium: beforeAfterTemplateUrl,
-    large: beforeAfterTemplateUrl,
-  };
+  try {
+    // Use a direct absolute path to the before/after template image
+    const beforeAfterTemplateUrl = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
+    
+    // Log that we're using this template
+    console.log("Using before/after template:", beforeAfterTemplateUrl);
+    
+    // Return sizes of the before/after template
+    const sizes = {
+      small: beforeAfterTemplateUrl,
+      medium: beforeAfterTemplateUrl,
+      large: beforeAfterTemplateUrl,
+    };
 
-  return {
-    originalImageUrl: imageUrl,
-    enhancedImageUrl: beforeAfterTemplateUrl, // Use the template as enhanced image
-    targetAudience: targetAudience || "Property Managers in Boston",
-    topicArea: topicArea || "Smart Space Optimization",
-    beforeAfterImage: sizes
-  };
+    return {
+      originalImageUrl: imageUrl,
+      enhancedImageUrl: beforeAfterTemplateUrl, // Use the template as enhanced image
+      targetAudience: targetAudience || "Property Managers in Boston",
+      topicArea: topicArea || "Smart Space Optimization",
+      beforeAfterImage: sizes
+    };
+  } catch (error) {
+    console.error("Error in enhanceOfficeImage:", error);
+    return {
+      originalImageUrl: imageUrl,
+      enhancedImageUrl: "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png", // Fallback path
+      targetAudience: targetAudience || "Property Managers in Boston",
+      topicArea: topicArea || "Smart Space Optimization",
+      error: error instanceof Error ? error.message : "Unknown error occurred"
+    };
+  }
 };

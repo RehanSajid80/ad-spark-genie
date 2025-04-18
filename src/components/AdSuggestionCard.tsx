@@ -21,14 +21,16 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
   const { platform, headline, description, imageRecommendation, dimensions } = suggestion;
   const [enhancedImage, setEnhancedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
   // Generate enhanced image when the card is selected
   useEffect(() => {
     const generateEnhancedImage = async () => {
       if (isSelected && !enhancedImage) {
         setIsLoading(true);
+        setImageError(false);
         try {
-          // Pass a placeholder image URL since we will replace it with the before/after template
+          // Pass a placeholder image URL
           const placeholderImage = '/placeholder.svg';
           const result = await enhanceOfficeImage(placeholderImage);
           
@@ -38,9 +40,14 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
             console.log("Enhanced image set:", result.enhancedImageUrl);
           } else {
             console.error("No enhanced image URL returned from service");
+            // Use fallback image
+            setEnhancedImage("/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png");
           }
         } catch (error) {
           console.error('Error generating enhanced image:', error);
+          setImageError(true);
+          // Use fallback image on error
+          setEnhancedImage("/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png");
         } finally {
           setIsLoading(false);
         }
@@ -49,6 +56,9 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
     
     generateEnhancedImage();
   }, [isSelected, enhancedImage]);
+  
+  // Default static image for fallback
+  const defaultImage = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
   
   return (
     <Card 
@@ -88,31 +98,26 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
                   <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
                   <span>Generating visualization...</span>
                 </div>
-              ) : enhancedImage ? (
+              ) : (
                 <div>
                   <img 
-                    src={enhancedImage} 
+                    src={enhancedImage || defaultImage} 
                     alt="Before/After Transformation" 
                     className="w-full rounded-md border border-border"
                     onLoad={() => console.log("Image loaded successfully")}
                     onError={(e) => {
-                      console.error("Error loading image:", e);
+                      console.error("Error loading image in card:", e);
+                      setImageError(true);
                       const imgElem = e.target as HTMLImageElement;
                       imgElem.onerror = null; // Prevent infinite loops
-                      imgElem.src = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png"; // Fallback direct URL
+                      imgElem.src = defaultImage; // Direct fallback path
                     }}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Before/After visualization for facility managers</p>
-                </div>
-              ) : (
-                // Fallback when no image loaded
-                <div className="bg-muted-foreground/10 rounded-md p-4 text-center">
-                  <img 
-                    src="/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png" 
-                    alt="Before/After Transformation" 
-                    className="w-full rounded-md border border-border"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Before/After visualization</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {imageError 
+                      ? "Using default visualization (error loading custom image)" 
+                      : "Before/After visualization for facility managers"}
+                  </p>
                 </div>
               )}
             </div>

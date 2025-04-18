@@ -48,8 +48,8 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
     return null;
   }
 
-  // Direct reference to the before/after image
-  const beforeAfterImage = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
+  // Always use the hardcoded path to ensure the image displays
+  const imageUrl = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
 
   return (
     <div className="rounded-lg overflow-hidden border border-border bg-card">
@@ -59,7 +59,7 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
       </div>
       <div className="p-4">
         <img 
-          src={beforeAfterImage} 
+          src={imageUrl} 
           alt="Before and After Transformation" 
           className="w-full rounded-md"
           onError={(e) => {
