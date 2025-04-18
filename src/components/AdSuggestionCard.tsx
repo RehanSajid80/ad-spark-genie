@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AdSuggestion } from '@/types/ad-types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageIcon, MessageSquare } from 'lucide-react';
+import { enhanceOfficeImage } from '@/services/enhance-image-service';
 
 interface AdSuggestionCardProps {
   suggestion: AdSuggestion;
@@ -18,6 +19,33 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
   onSelect
 }) => {
   const { platform, headline, description, imageRecommendation, dimensions } = suggestion;
+  const [enhancedImage, setEnhancedImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Generate enhanced image when the card is selected
+  useEffect(() => {
+    const generateEnhancedImage = async () => {
+      if (isSelected && !enhancedImage) {
+        setIsLoading(true);
+        try {
+          // Use placeholder image URL since we don't have the actual uploaded image here
+          const placeholderImage = '/lovable-uploads/c693ea9c-55ea-4e70-b10d-1d68d123acbf.png';
+          const result = await enhanceOfficeImage(placeholderImage);
+          
+          if (result.beforeAfterImage) {
+            // Use medium size for the card
+            setEnhancedImage(result.beforeAfterImage.medium);
+          }
+        } catch (error) {
+          console.error('Error generating enhanced image:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    generateEnhancedImage();
+  }, [isSelected, enhancedImage]);
   
   return (
     <Card 
@@ -49,8 +77,28 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
             <ImageIcon className="h-4 w-4 text-ad-purple" />
             <span className="text-xs font-medium">Image Recommendation</span>
           </div>
-          <p className="text-xs">{imageRecommendation}</p>
-          <p className="text-xs text-muted-foreground">Dimensions: {dimensions}</p>
+          
+          {enhancedImage && isSelected ? (
+            <div className="mt-2">
+              <img 
+                src={enhancedImage} 
+                alt="Before/After Transformation" 
+                className="w-full rounded-md border border-border"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Suggested visual for this ad campaign</p>
+            </div>
+          ) : (
+            <>
+              <p className="text-xs">{imageRecommendation}</p>
+              <p className="text-xs text-muted-foreground">Dimensions: {dimensions}</p>
+              {isLoading && isSelected && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                  <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
+                  <span>Generating visualization...</span>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </CardContent>
       
