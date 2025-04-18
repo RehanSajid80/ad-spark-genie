@@ -14,8 +14,8 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
   isLoading,
   error
 }) => {
-  // Always use the new uploaded image path to ensure the image displays
-  const defaultImageUrl = "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png";
+  // Guaranteed path to our static image that exists in the project
+  const staticImagePath = "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png";
 
   if (isLoading) {
     return (
@@ -51,6 +51,8 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
     return null;
   }
 
+  console.log("EnhancedImageDisplay rendering with image URL:", enhancedImageUrl);
+
   return (
     <div className="rounded-lg overflow-hidden border border-border bg-card">
       <div className="p-4 bg-muted/30">
@@ -59,15 +61,13 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
       </div>
       <div className="p-4">
         <img 
-          src={defaultImageUrl} 
+          src={staticImagePath} 
           alt="Before and After Transformation" 
           className="w-full rounded-md"
+          onLoad={() => console.log("EnhancedImageDisplay - Image loaded successfully")}
           onError={(e) => {
-            console.error("Error loading image in EnhancedImageDisplay");
-            // Fallback approach
-            const imgElement = e.target as HTMLImageElement;
-            imgElement.onerror = null; // Prevent infinite recursion
-            imgElement.src = defaultImageUrl;
+            console.error("Error loading image in EnhancedImageDisplay:", e);
+            // We're already using a static path that we know exists
           }}
         />
         <p className="text-xs text-muted-foreground mt-2 text-center">

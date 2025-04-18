@@ -23,31 +23,25 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   
-  // Default static image for fallback with the new uploaded image
-  const defaultImage = "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png";
+  // Guaranteed path to our static image that exists in the project
+  const staticImagePath = "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png";
   
   // Generate enhanced image when the card is selected
   useEffect(() => {
-    const generateEnhancedImage = async () => {
-      if (isSelected && !enhancedImage) {
-        setIsLoading(true);
-        setImageError(false);
-        try {
-          // Set the default image immediately so it shows up right away
-          setEnhancedImage(defaultImage);
-          console.log("Enhanced image set:", defaultImage);
-        } catch (error) {
-          console.error('Error generating enhanced image:', error);
-          setImageError(true);
-          setEnhancedImage(defaultImage);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-    
-    generateEnhancedImage();
-  }, [isSelected, enhancedImage, defaultImage]);
+    if (isSelected && !enhancedImage) {
+      setIsLoading(true);
+      setImageError(false);
+      
+      // Set the image immediately to ensure it displays
+      setEnhancedImage(staticImagePath);
+      console.log(`Card ${suggestion.id} - Image set to:`, staticImagePath);
+      
+      // Short timeout to show loading state
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+    }
+  }, [isSelected, enhancedImage, suggestion.id, staticImagePath]);
   
   return (
     <Card 
@@ -85,26 +79,24 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-8">
                   <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                  <span>Generating visualization...</span>
+                  <span>Loading visualization...</span>
                 </div>
               ) : (
                 <div>
                   <img 
-                    src={defaultImage} 
+                    src={staticImagePath} 
                     alt="Before/After Transformation" 
                     className="w-full rounded-md border border-border"
-                    onLoad={() => console.log("Image loaded successfully")}
+                    onLoad={() => console.log(`Card ${suggestion.id} - Image loaded successfully`)}
                     onError={(e) => {
-                      console.error("Error loading image in card:", e);
+                      console.error(`Card ${suggestion.id} - Error loading image:`, e);
                       setImageError(true);
-                      const imgElem = e.target as HTMLImageElement;
-                      imgElem.onerror = null; // Prevent infinite loops
-                      imgElem.src = defaultImage; // Direct fallback path
+                      // No need to set a fallback as we're already using a static path
                     }}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     {imageError 
-                      ? "Using default visualization (error loading custom image)" 
+                      ? "Error displaying visualization" 
                       : "Before/After visualization for facility managers"}
                   </p>
                 </div>

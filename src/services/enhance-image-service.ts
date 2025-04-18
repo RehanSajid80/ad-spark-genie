@@ -22,7 +22,7 @@ export const enhanceOfficeImage = async (
   try {
     console.log("Enhancing image with URL:", imageUrl);
     
-    // Use the newly uploaded image as the before/after template
+    // Static image path that we know exists in the project
     const beforeAfterTemplateUrl = "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png";
     
     console.log("Using before/after template:", beforeAfterTemplateUrl);
@@ -33,6 +33,15 @@ export const enhanceOfficeImage = async (
       medium: beforeAfterTemplateUrl,
       large: beforeAfterTemplateUrl,
     };
+
+    // Log to verify the response data
+    console.log("Returning enhanced image data:", {
+      originalImageUrl: imageUrl,
+      enhancedImageUrl: beforeAfterTemplateUrl,
+      targetAudience: targetAudience || "Property Managers in Boston",
+      topicArea: topicArea || "Smart Space Optimization",
+      beforeAfterImage: sizes
+    });
 
     return {
       originalImageUrl: imageUrl,
@@ -45,7 +54,7 @@ export const enhanceOfficeImage = async (
     console.error("Error in enhanceOfficeImage:", error);
     return {
       originalImageUrl: imageUrl,
-      enhancedImageUrl: "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png", // Fallback to the new image
+      enhancedImageUrl: "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png", // Fallback to the static image
       targetAudience: targetAudience || "Property Managers in Boston",
       topicArea: topicArea || "Smart Space Optimization",
       error: error instanceof Error ? error.message : "Unknown error occurred"
