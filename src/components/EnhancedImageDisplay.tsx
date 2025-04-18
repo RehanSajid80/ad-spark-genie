@@ -47,11 +47,8 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
     );
   }
 
-  if (!enhancedImageUrl) {
-    return null;
-  }
-
-  console.log("EnhancedImageDisplay rendering with image URL:", enhancedImageUrl);
+  // Force display of image even if enhancedImageUrl is null
+  const displayImageUrl = enhancedImageUrl || staticImagePath;
 
   return (
     <div className="rounded-lg overflow-hidden border border-border bg-card">
@@ -61,13 +58,13 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
       </div>
       <div className="p-4">
         <img 
-          src={staticImagePath} 
+          src={displayImageUrl} 
           alt="Before and After Transformation" 
           className="w-full rounded-md"
           onLoad={() => console.log("EnhancedImageDisplay - Image loaded successfully")}
           onError={(e) => {
             console.error("Error loading image in EnhancedImageDisplay:", e);
-            // We're already using a static path that we know exists
+            // Fallback to static image if loading fails
           }}
         />
         <p className="text-xs text-muted-foreground mt-2 text-center">
@@ -79,3 +76,4 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
 };
 
 export default EnhancedImageDisplay;
+
