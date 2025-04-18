@@ -14,8 +14,8 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
   isLoading,
   error
 }) => {
-  // Always use the hardcoded path to ensure the image displays
-  const defaultImageUrl = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
+  // Always use the new uploaded image path to ensure the image displays
+  const defaultImageUrl = "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png";
 
   if (isLoading) {
     return (

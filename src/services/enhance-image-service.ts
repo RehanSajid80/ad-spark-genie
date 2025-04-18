@@ -22,13 +22,12 @@ export const enhanceOfficeImage = async (
   try {
     console.log("Enhancing image with URL:", imageUrl);
     
-    // Use a direct absolute path to the before/after template image - hardcoded path
-    const beforeAfterTemplateUrl = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
+    // Use the newly uploaded image as the before/after template
+    const beforeAfterTemplateUrl = "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png";
     
-    // Log that we're using this template
     console.log("Using before/after template:", beforeAfterTemplateUrl);
     
-    // Return sizes of the before/after template - use the same template for all sizes
+    // Return sizes of the before/after template
     const sizes = {
       small: beforeAfterTemplateUrl,
       medium: beforeAfterTemplateUrl,
@@ -37,7 +36,7 @@ export const enhanceOfficeImage = async (
 
     return {
       originalImageUrl: imageUrl,
-      enhancedImageUrl: beforeAfterTemplateUrl, // Use the template as enhanced image
+      enhancedImageUrl: beforeAfterTemplateUrl,
       targetAudience: targetAudience || "Property Managers in Boston",
       topicArea: topicArea || "Smart Space Optimization",
       beforeAfterImage: sizes
@@ -46,7 +45,7 @@ export const enhanceOfficeImage = async (
     console.error("Error in enhanceOfficeImage:", error);
     return {
       originalImageUrl: imageUrl,
-      enhancedImageUrl: "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png", // Fallback path
+      enhancedImageUrl: "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png", // Fallback to the new image
       targetAudience: targetAudience || "Property Managers in Boston",
       topicArea: topicArea || "Smart Space Optimization",
       error: error instanceof Error ? error.message : "Unknown error occurred"

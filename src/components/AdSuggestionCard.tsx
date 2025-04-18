@@ -23,8 +23,8 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   
-  // Default static image for fallback - MUST use the hardcoded path
-  const defaultImage = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
+  // Default static image for fallback with the new uploaded image
+  const defaultImage = "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png";
   
   // Generate enhanced image when the card is selected
   useEffect(() => {
@@ -33,13 +33,12 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
         setIsLoading(true);
         setImageError(false);
         try {
-          // Use the default image directly
+          // Set the default image immediately so it shows up right away
           setEnhancedImage(defaultImage);
           console.log("Enhanced image set:", defaultImage);
         } catch (error) {
           console.error('Error generating enhanced image:', error);
           setImageError(true);
-          // Use fallback image on error
           setEnhancedImage(defaultImage);
         } finally {
           setIsLoading(false);
