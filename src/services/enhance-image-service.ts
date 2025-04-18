@@ -19,20 +19,21 @@ export const enhanceOfficeImage = async (
   targetAudience?: string,
   topicArea?: string
 ): Promise<EnhanceImageResponse> => {
-  const beforeAfterTemplateUrl = "/lovable-uploads/c693ea9c-55ea-4e70-b10d-1d68d123acbf.png";
+  // Use the new before/after comparison image
+  const beforeAfterTemplateUrl = "/lovable-uploads/0dadbd27-ece4-4a30-a7dd-b3aba75e78d9.png";
   
   // Return sizes of the before/after template
   const sizes = {
-    small: beforeAfterTemplateUrl,  // 800x600
-    medium: beforeAfterTemplateUrl, // 1200x900
-    large: beforeAfterTemplateUrl,  // 1600x1200
+    small: beforeAfterTemplateUrl,
+    medium: beforeAfterTemplateUrl,
+    large: beforeAfterTemplateUrl,
   };
 
   return {
     originalImageUrl: imageUrl,
     enhancedImageUrl: imageUrl, // Original image for now
-    targetAudience: targetAudience || "",
-    topicArea: topicArea || "",
+    targetAudience: targetAudience || "Property Managers in Boston",
+    topicArea: topicArea || "Smart Space Optimization",
     beforeAfterImage: sizes
   };
 };

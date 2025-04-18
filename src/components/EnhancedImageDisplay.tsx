@@ -19,7 +19,7 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
       <div className="rounded-lg overflow-hidden border border-border bg-card">
         <div className="p-4 bg-muted/30">
           <h3 className="text-lg font-semibold mb-2">Generating Before/After Visualization</h3>
-          <p className="text-sm text-muted-foreground mb-4">Creating a transformation image for Boston property managers...</p>
+          <p className="text-sm text-muted-foreground mb-4">Creating a transformation image for facility managers...</p>
           <Skeleton className="w-full h-[300px] rounded-md" />
           <div className="mt-2 flex justify-center">
             <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
@@ -48,15 +48,18 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
     return null;
   }
 
+  // Use the new uploaded image
+  const beforeAfterImage = "/lovable-uploads/0dadbd27-ece4-4a30-a7dd-b3aba75e78d9.png";
+
   return (
     <div className="rounded-lg overflow-hidden border border-border bg-card">
       <div className="p-4 bg-muted/30">
         <h3 className="text-lg font-semibold mb-2">Before/After Transformation</h3>
-        <p className="text-sm text-muted-foreground mb-4">Visualization for Boston property managers</p>
+        <p className="text-sm text-muted-foreground mb-4">Visualization for facility managers</p>
       </div>
       <div className="p-4">
         <img 
-          src={enhancedImageUrl} 
+          src={beforeAfterImage} 
           alt="Before and After Transformation" 
           className="w-full rounded-md"
           onError={(e) => {
@@ -66,7 +69,7 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
           }}
         />
         <p className="text-xs text-muted-foreground mt-2 text-center">
-          AI-generated visualization based on your property management context
+          See how facility managers transform from outdated tools to real-time visibility and automation
         </p>
       </div>
     </div>

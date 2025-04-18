@@ -28,8 +28,8 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
       if (isSelected && !enhancedImage) {
         setIsLoading(true);
         try {
-          // Use placeholder image URL since we don't have the actual uploaded image here
-          const placeholderImage = '/lovable-uploads/c693ea9c-55ea-4e70-b10d-1d68d123acbf.png';
+          // Pass a placeholder image URL since we will replace it with the before/after template
+          const placeholderImage = '/placeholder.svg';
           const result = await enhanceOfficeImage(placeholderImage);
           
           if (result.beforeAfterImage) {
@@ -85,7 +85,7 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
                 alt="Before/After Transformation" 
                 className="w-full rounded-md border border-border"
               />
-              <p className="text-xs text-muted-foreground mt-1">Suggested visual for this ad campaign</p>
+              <p className="text-xs text-muted-foreground mt-1">Before/After visualization for facility managers</p>
             </div>
           ) : (
             <>
