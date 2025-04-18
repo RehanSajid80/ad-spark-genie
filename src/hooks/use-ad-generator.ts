@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AdInput, AdSuggestion, ChatMessage } from '../types/ad-types';
 import { generateAdSuggestions } from '../services/n8n-service';
+import { enhanceOfficeImage } from '../services/enhance-image-service';
 import { toast } from 'sonner';
 
 export function useAdGenerator() {
