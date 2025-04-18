@@ -48,8 +48,8 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
     return null;
   }
 
-  // Use the new uploaded image
-  const beforeAfterImage = "/lovable-uploads/0dadbd27-ece4-4a30-a7dd-b3aba75e78d9.png";
+  // Direct reference to the before/after image
+  const beforeAfterImage = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
 
   return (
     <div className="rounded-lg overflow-hidden border border-border bg-card">
@@ -63,9 +63,11 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
           alt="Before and After Transformation" 
           className="w-full rounded-md"
           onError={(e) => {
-            // If image fails to load, set a data attribute to trigger CSS fallback
-            e.currentTarget.setAttribute('data-error', 'true');
-            e.currentTarget.setAttribute('alt', 'Error loading image');
+            console.error("Error loading image in EnhancedImageDisplay");
+            // Fallback approach
+            const imgElement = e.target as HTMLImageElement;
+            imgElement.onerror = null; // Prevent infinite recursion
+            imgElement.src = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
           }}
         />
         <p className="text-xs text-muted-foreground mt-2 text-center">

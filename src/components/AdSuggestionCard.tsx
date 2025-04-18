@@ -32,9 +32,12 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
           const placeholderImage = '/placeholder.svg';
           const result = await enhanceOfficeImage(placeholderImage);
           
-          if (result.beforeAfterImage) {
-            // Use medium size for the card
-            setEnhancedImage(result.beforeAfterImage.medium);
+          // Directly use the returned image URL
+          if (result && result.enhancedImageUrl) {
+            setEnhancedImage(result.enhancedImageUrl);
+            console.log("Enhanced image set:", result.enhancedImageUrl);
+          } else {
+            console.error("No enhanced image URL returned from service");
           }
         } catch (error) {
           console.error('Error generating enhanced image:', error);
@@ -80,24 +83,36 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
           
           {isSelected ? (
             <div className="mt-2">
-              {enhancedImage ? (
-                <>
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-8">
+                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                  <span>Generating visualization...</span>
+                </div>
+              ) : enhancedImage ? (
+                <div>
                   <img 
                     src={enhancedImage} 
                     alt="Before/After Transformation" 
                     className="w-full rounded-md border border-border"
+                    onLoad={() => console.log("Image loaded successfully")}
+                    onError={(e) => {
+                      console.error("Error loading image:", e);
+                      const imgElem = e.target as HTMLImageElement;
+                      imgElem.onerror = null; // Prevent infinite loops
+                      imgElem.src = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png"; // Fallback direct URL
+                    }}
                   />
                   <p className="text-xs text-muted-foreground mt-1">Before/After visualization for facility managers</p>
-                </>
-              ) : isLoading ? (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-                  <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
-                  <span>Generating visualization...</span>
                 </div>
               ) : (
-                // Fallback before image loads
-                <div className="bg-muted-foreground/10 rounded-md h-32 flex items-center justify-center">
-                  <span className="text-xs text-muted-foreground">Preparing visualization...</span>
+                // Fallback when no image loaded
+                <div className="bg-muted-foreground/10 rounded-md p-4 text-center">
+                  <img 
+                    src="/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png" 
+                    alt="Before/After Transformation" 
+                    className="w-full rounded-md border border-border"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Before/After visualization</p>
                 </div>
               )}
             </div>

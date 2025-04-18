@@ -19,8 +19,8 @@ export const enhanceOfficeImage = async (
   targetAudience?: string,
   topicArea?: string
 ): Promise<EnhanceImageResponse> => {
-  // Use the before/after comparison image
-  const beforeAfterTemplateUrl = "/lovable-uploads/0dadbd27-ece4-4a30-a7dd-b3aba75e78d9.png";
+  // Use the new uploaded before/after comparison image
+  const beforeAfterTemplateUrl = "/lovable-uploads/054358c7-043e-4268-81e2-6a614930f37b.png";
   
   // Log that we're using this template
   console.log("Using before/after template:", beforeAfterTemplateUrl);
