@@ -78,25 +78,33 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
             <span className="text-xs font-medium">Image Recommendation</span>
           </div>
           
-          {enhancedImage && isSelected ? (
+          {isSelected ? (
             <div className="mt-2">
-              <img 
-                src={enhancedImage} 
-                alt="Before/After Transformation" 
-                className="w-full rounded-md border border-border"
-              />
-              <p className="text-xs text-muted-foreground mt-1">Before/After visualization for facility managers</p>
+              {enhancedImage ? (
+                <>
+                  <img 
+                    src={enhancedImage} 
+                    alt="Before/After Transformation" 
+                    className="w-full rounded-md border border-border"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Before/After visualization for facility managers</p>
+                </>
+              ) : isLoading ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                  <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
+                  <span>Generating visualization...</span>
+                </div>
+              ) : (
+                // Fallback before image loads
+                <div className="bg-muted-foreground/10 rounded-md h-32 flex items-center justify-center">
+                  <span className="text-xs text-muted-foreground">Preparing visualization...</span>
+                </div>
+              )}
             </div>
           ) : (
             <>
               <p className="text-xs">{imageRecommendation}</p>
               <p className="text-xs text-muted-foreground">Dimensions: {dimensions}</p>
-              {isLoading && isSelected && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-                  <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
-                  <span>Generating visualization...</span>
-                </div>
-              )}
             </>
           )}
         </div>

@@ -19,8 +19,11 @@ export const enhanceOfficeImage = async (
   targetAudience?: string,
   topicArea?: string
 ): Promise<EnhanceImageResponse> => {
-  // Use the new before/after comparison image
+  // Use the before/after comparison image
   const beforeAfterTemplateUrl = "/lovable-uploads/0dadbd27-ece4-4a30-a7dd-b3aba75e78d9.png";
+  
+  // Log that we're using this template
+  console.log("Using before/after template:", beforeAfterTemplateUrl);
   
   // Return sizes of the before/after template
   const sizes = {
@@ -31,7 +34,7 @@ export const enhanceOfficeImage = async (
 
   return {
     originalImageUrl: imageUrl,
-    enhancedImageUrl: imageUrl, // Original image for now
+    enhancedImageUrl: beforeAfterTemplateUrl, // Use the template as enhanced image
     targetAudience: targetAudience || "Property Managers in Boston",
     topicArea: topicArea || "Smart Space Optimization",
     beforeAfterImage: sizes
