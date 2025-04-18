@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useAdGenerator } from '@/hooks/use-ad-generator';
 import AdForm from '@/components/AdForm';
@@ -9,6 +8,8 @@ import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { uploadDefaultImage } from '@/utils/uploadDefaultImage';
+import { toast } from 'sonner';
 
 const Index = () => {
   const {
@@ -31,6 +32,14 @@ const Index = () => {
   const showSuggestions = suggestions.length > 0;
   // Track whether we're in chat/refinement view
   const showChat = selectedSuggestion !== null;
+
+  useEffect(() => {
+    // Upload the default image when the component mounts
+    uploadDefaultImage().catch(error => {
+      console.error('Failed to upload default image:', error);
+      toast.error('Failed to upload default image');
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-purple-gradient">
