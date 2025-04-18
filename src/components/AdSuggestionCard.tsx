@@ -43,6 +43,16 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
     }
   }, [isSelected, enhancedImage, suggestion.id, staticImagePath]);
   
+  // Custom headline and description specifically for facility managers
+  const facilityManagersHeadline = "Transform Your Asset Management Experience Today";
+  const facilityManagersDescription = "Discover how our integrated platform helps Facility Managers enhance communication, streamline operations, and build better experiences.";
+  const facilityManagersImageRec = "Professional image showing Facility Managers using a digital solution in a modern setting";
+  
+  // Use the facility managers content for this card
+  const displayHeadline = facilityManagersHeadline;
+  const displayDescription = facilityManagersDescription;
+  const displayImageRec = facilityManagersImageRec;
+  
   return (
     <Card 
       className={`transition-all-300 ${
@@ -62,11 +72,11 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
             </Badge>
           )}
         </div>
-        <CardTitle className="text-md leading-tight">{headline}</CardTitle>
+        <CardTitle className="text-md leading-tight">{displayHeadline}</CardTitle>
       </CardHeader>
       
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="text-sm text-muted-foreground">{displayDescription}</p>
         
         <div className="bg-muted p-3 rounded-md space-y-2">
           <div className="flex items-center gap-2">
@@ -104,7 +114,7 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
             </div>
           ) : (
             <>
-              <p className="text-xs">{imageRecommendation}</p>
+              <p className="text-xs">{displayImageRec}</p>
               <p className="text-xs text-muted-foreground">Dimensions: {dimensions}</p>
             </>
           )}

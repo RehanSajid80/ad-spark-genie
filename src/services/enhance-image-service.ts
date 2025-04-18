@@ -34,20 +34,24 @@ export const enhanceOfficeImage = async (
       large: beforeAfterTemplateUrl,
     };
 
+    // Update the target audience and topic area to match the facility managers focus
+    const facilityAudience = "Facility Managers";
+    const facilityTopic = "Asset Management";
+
     // Log to verify the response data
     console.log("Returning enhanced image data:", {
       originalImageUrl: imageUrl,
       enhancedImageUrl: beforeAfterTemplateUrl,
-      targetAudience: targetAudience || "Property Managers in Boston",
-      topicArea: topicArea || "Smart Space Optimization",
+      targetAudience: facilityAudience,
+      topicArea: facilityTopic,
       beforeAfterImage: sizes
     });
 
     return {
       originalImageUrl: imageUrl,
       enhancedImageUrl: beforeAfterTemplateUrl,
-      targetAudience: targetAudience || "Property Managers in Boston",
-      topicArea: topicArea || "Smart Space Optimization",
+      targetAudience: facilityAudience,
+      topicArea: facilityTopic,
       beforeAfterImage: sizes
     };
   } catch (error) {
@@ -55,8 +59,8 @@ export const enhanceOfficeImage = async (
     return {
       originalImageUrl: imageUrl,
       enhancedImageUrl: "/lovable-uploads/fe5191ed-c13f-46de-82f5-d7f002838091.png", // Fallback to the static image
-      targetAudience: targetAudience || "Property Managers in Boston",
-      topicArea: topicArea || "Smart Space Optimization",
+      targetAudience: targetAudience || "Facility Managers",
+      topicArea: topicArea || "Asset Management",
       error: error instanceof Error ? error.message : "Unknown error occurred"
     };
   }

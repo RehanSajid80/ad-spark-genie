@@ -56,8 +56,8 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
   return (
     <div className="rounded-lg overflow-hidden border border-border bg-card">
       <div className="p-4 bg-muted/30">
-        <h3 className="text-lg font-semibold mb-2">Before/After Transformation</h3>
-        <p className="text-sm text-muted-foreground mb-4">Visualization for facility managers</p>
+        <h3 className="text-lg font-semibold mb-2">Transform Your Asset Management Experience Today</h3>
+        <p className="text-sm text-muted-foreground mb-4">Discover how our integrated platform helps Facility Managers enhance communication, streamline operations, and build better experiences.</p>
       </div>
       <div className="p-4">
         <img 
@@ -71,7 +71,7 @@ const EnhancedImageDisplay: React.FC<EnhancedImageDisplayProps> = ({
           }}
         />
         <p className="text-xs text-muted-foreground mt-2 text-center">
-          See how facility managers transform from outdated tools to real-time visibility and automation
+          See how facility managers transform from outdated asset management tools to real-time visibility and automation
         </p>
       </div>
     </div>
