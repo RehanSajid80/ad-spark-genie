@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageIcon, MessageSquare } from 'lucide-react';
-import { enhanceOfficeImage } from '@/services/enhance-image-service';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdSuggestionCardProps {
   suggestion: AdSuggestion;
@@ -13,41 +13,58 @@ interface AdSuggestionCardProps {
   onSelect: (suggestion: AdSuggestion) => void;
 }
 
+const getLatestImage = async () => {
+  // Query latest processed image uploaded
+  const { data, error } = await supabase
+    .from('ad_images')
+    .select('public_url')
+    .eq('processed', true)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error || !data || !data[0]) {
+    // Fallback to static image if not found
+    return "/lovable-uploads/32455e0f-c91f-4dce-ae71-9f815d8df69f.png";
+  }
+  return data[0].public_url;
+};
+
 const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
   suggestion,
   isSelected,
   onSelect
 }) => {
   const { platform, headline, description, imageRecommendation, dimensions } = suggestion;
-  const [enhancedImage, setEnhancedImage] = useState<string | null>(null);
+  const [cardImage, setCardImage] = useState("/lovable-uploads/32455e0f-c91f-4dce-ae71-9f815d8df69f.png");
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
-  
-  // Use the new before/after image
-  const staticImagePath = "/lovable-uploads/32455e0f-c91f-4dce-ae71-9f815d8df69f.png";
-  
-  // Generate enhanced image when the card is selected
+
   useEffect(() => {
-    if (isSelected && !enhancedImage) {
+    let ignore = false;
+    if (isSelected) {
       setIsLoading(true);
       setImageError(false);
-      
-      // Set the image immediately to ensure it displays
-      setEnhancedImage(staticImagePath);
-      console.log(`Card ${suggestion.id} - Image set to:`, staticImagePath);
-      
-      // Short timeout to show loading state
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
+
+      getLatestImage().then(url => {
+        if (!ignore) {
+          setCardImage(url);
+          setIsLoading(false);
+        }
+      }).catch(() => {
+        if (!ignore) {
+          setCardImage("/lovable-uploads/32455e0f-c91f-4dce-ae71-9f815d8df69f.png");
+          setIsLoading(false);
+        }
+      });
     }
-  }, [isSelected, enhancedImage, suggestion.id, staticImagePath]);
-  
+    return () => { ignore = true; };
+  }, [isSelected]);
+
   // Custom headline and description specifically for facility managers
   const facilityManagersHeadline = "Transform Your Asset Management Experience Today";
   const facilityManagersDescription = "Discover how our integrated platform helps Facility Managers enhance communication, streamline operations, and build better experiences.";
   const facilityManagersImageRec = "Professional image showing Facility Managers using a digital solution in a modern setting";
-  
+
   // Use the facility managers content for this card
   const displayHeadline = facilityManagersHeadline;
   const displayDescription = facilityManagersDescription;
@@ -94,14 +111,12 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
               ) : (
                 <div>
                   <img 
-                    src={staticImagePath} 
+                    src={cardImage} 
                     alt="Before/After Transformation" 
                     className="w-full rounded-md border border-border"
                     onLoad={() => console.log(`Card ${suggestion.id} - Image loaded successfully`)}
                     onError={(e) => {
-                      console.error(`Card ${suggestion.id} - Error loading image:`, e);
                       setImageError(true);
-                      // No need to set a fallback as we're already using a static path
                     }}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
