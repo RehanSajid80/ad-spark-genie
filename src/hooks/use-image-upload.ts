@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -8,8 +7,16 @@ interface UseImageUploadProps {
   setIsUploading: (isUploading: boolean) => void;
 }
 
-// n8n webhook and actual Supabase table are production-level
 const N8N_WEBHOOK_ENDPOINT = 'https://officespacesoftware.app.n8n.cloud/webhook-test/08c0cba4-4ad1-46ff-bf31-9bbe83261469';
+
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
 
 export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUploadProps) => {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -68,12 +75,14 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
     }
   };
 
-  // Notify n8n and "mark as processed" after webhook
   const sendToWebhook = async (publicUrl: string, fileName: string, file: File, timestamp: string) => {
     try {
       setUploadProgress(90);
 
-      // Send POST to n8n
+      // Convert file to base64
+      const base64Image = await fileToBase64(file);
+      console.log('Image converted to base64');
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -83,6 +92,7 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
         filename: fileName,
         originalFilename: file.name,
         uploadedAt: timestamp,
+        uploadedImage: base64Image,
         metadata: {
           size: file.size,
           type: file.type,
@@ -105,7 +115,6 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
         toast.success('Production image uploaded and n8n workflow triggered');
       }
 
-      // Simulate n8n "processing" (in production, you could poll or leverage a webhook)
       // Mark as processed in ad_images
       await supabase
         .from('ad_images')
