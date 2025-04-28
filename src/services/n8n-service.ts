@@ -2,6 +2,15 @@ import { AdSuggestion, AdCategory } from '../types/ad-types';
 
 const N8N_WEBHOOK_ENDPOINT = 'https://officespacesoftware.app.n8n.cloud/webhook-test/08c0cba4-4ad1-46ff-bf31-9bbe83261469';
 
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
+
 export const generateAdSuggestions = async (
   image: File | null,
   context: string,
@@ -14,7 +23,14 @@ export const generateAdSuggestions = async (
     // Generate mock suggestions first
     const suggestions = generateMockSuggestions(targetAudience, topicArea);
     
-    // Send both input and generated suggestions to webhook
+    // Convert image to base64 if it exists
+    let base64Image = null;
+    if (image) {
+      base64Image = await fileToBase64(image);
+      console.log('Image converted to base64 for n8n webhook');
+    }
+    
+    // Send both input, generated suggestions and image data to webhook
     try {
       await fetch(N8N_WEBHOOK_ENDPOINT, {
         method: 'POST',
@@ -31,10 +47,11 @@ export const generateAdSuggestions = async (
             topic_area: topicArea,
             timestamp: new Date().toISOString()
           },
-          generated_suggestions: suggestions
+          generated_suggestions: suggestions,
+          uploadedImage: base64Image
         }),
       });
-      console.log('Data and suggestions sent to n8n successfully');
+      console.log('Data, suggestions and image sent to n8n successfully');
     } catch (err) {
       console.log('Non-fatal error sending to n8n:', err);
     }
