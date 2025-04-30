@@ -34,13 +34,20 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
   isSelected,
   onSelect
 }) => {
-  const { platform, headline, description, imageRecommendation, dimensions } = suggestion;
+  const { platform, headline, description, imageRecommendation, dimensions, generatedImageUrl, revisedPrompt } = suggestion;
   const [cardImage, setCardImage] = useState("/lovable-uploads/32455e0f-c91f-4dce-ae71-9f815d8df69f.png");
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     let ignore = false;
+    
+    // If we have a generated image from the API, use that first
+    if (generatedImageUrl) {
+      setCardImage(generatedImageUrl);
+      return;
+    }
+    
     if (isSelected) {
       setIsLoading(true);
       setImageError(false);
@@ -58,17 +65,12 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
       });
     }
     return () => { ignore = true; };
-  }, [isSelected]);
+  }, [isSelected, generatedImageUrl]);
 
-  // Custom headline and description specifically for facility managers
-  const facilityManagersHeadline = "Transform Your Asset Management Experience Today";
-  const facilityManagersDescription = "Discover how our integrated platform helps Facility Managers enhance communication, streamline operations, and build better experiences.";
-  const facilityManagersImageRec = "Professional image showing Facility Managers using a digital solution in a modern setting";
-
-  // Use the facility managers content for this card
-  const displayHeadline = facilityManagersHeadline;
-  const displayDescription = facilityManagersDescription;
-  const displayImageRec = facilityManagersImageRec;
+  // Use the provided content from the suggestion
+  const displayHeadline = headline;
+  const displayDescription = description;
+  const displayImageRec = imageRecommendation;
   
   return (
     <Card 
@@ -101,7 +103,27 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
             <span className="text-xs font-medium">Image Recommendation</span>
           </div>
           
-          {isSelected ? (
+          {generatedImageUrl ? (
+            <div className="mt-2">
+              <img 
+                src={generatedImageUrl} 
+                alt="Generated Ad Image" 
+                className="w-full rounded-md border border-border"
+                onLoad={() => console.log(`Card ${suggestion.id} - AI generated image loaded successfully`)}
+                onError={(e) => {
+                  setImageError(true);
+                  setCardImage("/lovable-uploads/32455e0f-c91f-4dce-ae71-9f815d8df69f.png");
+                }}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {imageError 
+                  ? "Error displaying AI generated image" 
+                  : revisedPrompt 
+                    ? "AI generated image based on your content" 
+                    : displayImageRec}
+              </p>
+            </div>
+          ) : isSelected ? (
             <div className="mt-2">
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-8">
@@ -122,7 +144,7 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
                   <p className="text-xs text-muted-foreground mt-1">
                     {imageError 
                       ? "Error displaying visualization" 
-                      : "Before/After visualization for facility managers"}
+                      : "Before/After visualization"}
                   </p>
                 </div>
               )}

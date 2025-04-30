@@ -1,3 +1,4 @@
+
 export interface AdInput {
   image: File | null;
   context: string;
@@ -14,6 +15,8 @@ export interface AdSuggestion {
   description: string;
   imageRecommendation: string;
   dimensions: string;
+  generatedImageUrl: string | null;
+  revisedPrompt: string | null;
 }
 
 export interface ChatMessage {

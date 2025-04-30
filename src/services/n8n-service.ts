@@ -1,6 +1,7 @@
+
 import { AdSuggestion, AdCategory } from '../types/ad-types';
 
-const N8N_WEBHOOK_ENDPOINT = 'https://officespacesoftware.app.n8n.cloud/webhook-test/08c0cba4-4ad1-46ff-bf31-9bbe83261469';
+const N8N_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/1483ba42-2449-4934-b2c9-4b8dc1ec4a34';
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -32,12 +33,11 @@ export const generateAdSuggestions = async (
     
     // Send both input, generated suggestions and image data to webhook
     try {
-      await fetch(N8N_WEBHOOK_ENDPOINT, {
+      const response = await fetch(N8N_WEBHOOK_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        mode: 'no-cors',
         body: JSON.stringify({
           input: {
             context,
@@ -51,7 +51,40 @@ export const generateAdSuggestions = async (
           uploadedImage: base64Image
         }),
       });
+      
       console.log('Data, suggestions and image sent to n8n successfully');
+      
+      // Process the response if valid
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Received response from n8n:', data);
+        
+        // Update the suggestions with generated images if available
+        if (data.images && Array.isArray(data.images)) {
+          console.log(`Received ${data.images.length} generated images`);
+          
+          // Assign image URLs to suggestions based on platform
+          // LinkedIn ads get first image (if available)
+          const linkedInSuggestions = suggestions.filter(s => s.platform === 'linkedin');
+          const googleSuggestions = suggestions.filter(s => s.platform === 'google');
+          
+          data.images.forEach((img, index) => {
+            if (index < linkedInSuggestions.length && img.url) {
+              console.log(`Assigning image ${index} to LinkedIn suggestion`);
+              linkedInSuggestions[index].generatedImageUrl = img.url;
+              linkedInSuggestions[index].revisedPrompt = img.revised_prompt;
+            } else if (img.url) {
+              // Assign to Google ads if there are more images than LinkedIn suggestions
+              const googleIndex = index - linkedInSuggestions.length;
+              if (googleIndex < googleSuggestions.length) {
+                console.log(`Assigning image ${index} to Google suggestion`);
+                googleSuggestions[googleIndex].generatedImageUrl = img.url;
+                googleSuggestions[googleIndex].revisedPrompt = img.revised_prompt;
+              }
+            }
+          });
+        }
+      }
     } catch (err) {
       console.log('Non-fatal error sending to n8n:', err);
     }
@@ -178,7 +211,9 @@ const generateMockSuggestions = (targetAudience: string, topicArea: string): AdS
       headline: `Transform Your ${topicArea} Experience Today`,
       description: `Discover how our integrated platform helps ${targetAudience} enhance communication, streamline operations, and build better experiences.`,
       imageRecommendation: `Professional image showing ${targetAudience} using a digital solution in a modern setting`,
-      dimensions: '1200 x 627 pixels'
+      dimensions: '1200 x 627 pixels',
+      generatedImageUrl: null,
+      revisedPrompt: null
     },
     {
       id: 'li-2',
@@ -186,7 +221,9 @@ const generateMockSuggestions = (targetAudience: string, topicArea: string): AdS
       headline: `Empower ${targetAudience} with Digital ${topicArea} Solutions`,
       description: 'Our experience platform increases satisfaction rates by 35% and reduces management overhead by 20%.',
       imageRecommendation: `Split-screen showing before/after of ${topicArea} management with digital transformation`,
-      dimensions: '1200 x 627 pixels'
+      dimensions: '1200 x 627 pixels',
+      generatedImageUrl: null,
+      revisedPrompt: null
     },
     {
       id: 'li-3',
@@ -194,7 +231,9 @@ const generateMockSuggestions = (targetAudience: string, topicArea: string): AdS
       headline: `The Future of ${topicArea} is Here`,
       description: `Join 500+ ${targetAudience} who have revolutionized their experience with our all-in-one platform.`,
       imageRecommendation: `Futuristic visualization of ${topicArea} with connected users`,
-      dimensions: '1200 x 627 pixels'
+      dimensions: '1200 x 627 pixels',
+      generatedImageUrl: null,
+      revisedPrompt: null
     }
   ];
 
@@ -205,7 +244,9 @@ const generateMockSuggestions = (targetAudience: string, topicArea: string): AdS
       headline: `${topicArea} Platform | Boost Satisfaction`,
       description: `Streamline ${targetAudience} experiences. Try free for 30 days!`,
       imageRecommendation: 'Clean, minimal interface of the platform with key features highlighted',
-      dimensions: '1200 x 628 pixels'
+      dimensions: '1200 x 628 pixels',
+      generatedImageUrl: null,
+      revisedPrompt: null
     },
     {
       id: 'g-2',
@@ -213,7 +254,9 @@ const generateMockSuggestions = (targetAudience: string, topicArea: string): AdS
       headline: `${topicArea} Software | 35% More Efficient`,
       description: `All-in-one solution for ${targetAudience}. Join 10,000+ happy users today!`,
       imageRecommendation: 'Person smiling while using the platform on mobile and desktop',
-      dimensions: '1200 x 628 pixels'
+      dimensions: '1200 x 628 pixels',
+      generatedImageUrl: null,
+      revisedPrompt: null
     },
     {
       id: 'g-3',
@@ -221,7 +264,9 @@ const generateMockSuggestions = (targetAudience: string, topicArea: string): AdS
       headline: `Digital ${topicArea} Portal | Easy Implementation`,
       description: `Ready in 24 hours for ${targetAudience}. Seamless integration. Free demo.`,
       imageRecommendation: 'Screenshot of the platform dashboard with analysis metrics',
-      dimensions: '1200 x 628 pixels'
+      dimensions: '1200 x 628 pixels',
+      generatedImageUrl: null,
+      revisedPrompt: null
     }
   ];
 
