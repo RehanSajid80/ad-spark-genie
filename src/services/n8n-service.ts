@@ -215,26 +215,26 @@ const generateMockSuggestions = (targetAudience: string, topicArea: string): AdS
       generatedImageUrl: null,
       revisedPrompt: null
     },
-    {
-      id: 'li-2',
-      platform: 'linkedin',
-      headline: `Empower ${targetAudience} with Digital ${topicArea} Solutions`,
-      description: 'Our experience platform increases satisfaction rates by 35% and reduces management overhead by 20%.',
-      imageRecommendation: `Split-screen showing before/after of ${topicArea} management with digital transformation`,
-      dimensions: '1200 x 627 pixels',
-      generatedImageUrl: null,
-      revisedPrompt: null
-    },
-    {
-      id: 'li-3',
-      platform: 'linkedin',
-      headline: `The Future of ${topicArea} is Here`,
-      description: `Join 500+ ${targetAudience} who have revolutionized their experience with our all-in-one platform.`,
-      imageRecommendation: `Futuristic visualization of ${topicArea} with connected users`,
-      dimensions: '1200 x 627 pixels',
-      generatedImageUrl: null,
-      revisedPrompt: null
-    }
+    // {
+    //   id: 'li-2',
+    //   platform: 'linkedin',
+    //   headline: `Empower ${targetAudience} with Digital ${topicArea} Solutions`,
+    //   description: 'Our experience platform increases satisfaction rates by 35% and reduces management overhead by 20%.',
+    //   imageRecommendation: `Split-screen showing before/after of ${topicArea} management with digital transformation`,
+    //   dimensions: '1200 x 627 pixels',
+    //   generatedImageUrl: null,
+    //   revisedPrompt: null
+    // },
+    // {
+    //   id: 'li-3',
+    //   platform: 'linkedin',
+    //   headline: `The Future of ${topicArea} is Here`,
+    //   description: `Join 500+ ${targetAudience} who have revolutionized their experience with our all-in-one platform.`,
+    //   imageRecommendation: `Futuristic visualization of ${topicArea} with connected users`,
+    //   dimensions: '1200 x 627 pixels',
+    //   generatedImageUrl: null,
+    //   revisedPrompt: null
+    // }
   ];
 
   const googleSuggestions: AdSuggestion[] = [
@@ -248,26 +248,26 @@ const generateMockSuggestions = (targetAudience: string, topicArea: string): AdS
       generatedImageUrl: null,
       revisedPrompt: null
     },
-    {
-      id: 'g-2',
-      platform: 'google',
-      headline: `${topicArea} Software | 35% More Efficient`,
-      description: `All-in-one solution for ${targetAudience}. Join 10,000+ happy users today!`,
-      imageRecommendation: 'Person smiling while using the platform on mobile and desktop',
-      dimensions: '1200 x 628 pixels',
-      generatedImageUrl: null,
-      revisedPrompt: null
-    },
-    {
-      id: 'g-3',
-      platform: 'google',
-      headline: `Digital ${topicArea} Portal | Easy Implementation`,
-      description: `Ready in 24 hours for ${targetAudience}. Seamless integration. Free demo.`,
-      imageRecommendation: 'Screenshot of the platform dashboard with analysis metrics',
-      dimensions: '1200 x 628 pixels',
-      generatedImageUrl: null,
-      revisedPrompt: null
-    }
+    // {
+    //   id: 'g-2',
+    //   platform: 'google',
+    //   headline: `${topicArea} Software | 35% More Efficient`,
+    //   description: `All-in-one solution for ${targetAudience}. Join 10,000+ happy users today!`,
+    //   imageRecommendation: 'Person smiling while using the platform on mobile and desktop',
+    //   dimensions: '1200 x 628 pixels',
+    //   generatedImageUrl: null,
+    //   revisedPrompt: null
+    // },
+    // {
+    //   id: 'g-3',
+    //   platform: 'google',
+    //   headline: `Digital ${topicArea} Portal | Easy Implementation`,
+    //   description: `Ready in 24 hours for ${targetAudience}. Seamless integration. Free demo.`,
+    //   imageRecommendation: 'Screenshot of the platform dashboard with analysis metrics',
+    //   dimensions: '1200 x 628 pixels',
+    //   generatedImageUrl: null,
+    //   revisedPrompt: null
+    // }
   ];
 
   return [...linkedInSuggestions, ...googleSuggestions];
