@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { AdInput, AdSuggestion, ChatMessage } from '../types/ad-types';
-import { generateAdSuggestions } from '../services/n8n-service';
+import { AdInput, AdSuggestion, ChatMessage, ChatHistoryItem } from '../types/ad-types';
+import { generateAdSuggestions, sendChatMessage } from '../services/n8n-service';
 import { enhanceOfficeImage } from '../services/enhance-image-service';
 import { toast } from 'sonner';
 
@@ -22,6 +22,8 @@ export function useAdGenerator() {
   const [enhancedImage, setEnhancedImage] = useState<string | null>(null);
   const [enhancedImageError, setEnhancedImageError] = useState<string | undefined>(undefined);
   const [isEnhancingImage, setIsEnhancingImage] = useState(false);
+  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
+  const [isProcessingChat, setIsProcessingChat] = useState(false);
 
   const handleImageChange = (file: File | null) => {
     setAdInput(prev => ({ ...prev, image: file }));
@@ -106,6 +108,9 @@ export function useAdGenerator() {
   const selectSuggestion = (suggestion: AdSuggestion | null) => {
     setSelectedSuggestion(suggestion);
     
+    // Reset chat history when selecting a new suggestion
+    setChatHistory([]);
+    
     // Add initial message to chat when selecting a suggestion
     if (suggestion && chatMessages.length === 0) {
       const initialMessage: ChatMessage = {
@@ -126,9 +131,10 @@ export function useAdGenerator() {
     }
   };
 
-  const sendChatMessage = (content: string) => {
-    if (!content.trim()) return;
+  const sendChatMessageToAI = async (content: string) => {
+    if (!content.trim() || !selectedSuggestion) return;
     
+    // Add user message to chat
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content,
@@ -137,18 +143,79 @@ export function useAdGenerator() {
     };
     
     setChatMessages(prev => [...prev, userMessage]);
+    setIsProcessingChat(true);
     
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Get the current image URL from either the generated image or the last chat response
+      const currentImageUrl = selectedSuggestion.generatedImageUrl || 
+        (chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].imageUrl : null);
+      
+      if (!currentImageUrl) {
+        throw new Error('No image available to modify');
+      }
+      
+      // Send the chat message to the API
+      const result = await sendChatMessage(
+        chatHistory,
+        content,
+        currentImageUrl
+      );
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      // Update the chat history
+      const newHistoryItem: ChatHistoryItem = {
+        userInstruction: content,
+        dallePrompt: result.dallePrompt,
+        imageUrl: result.imageUrl
+      };
+      
+      setChatHistory(prev => [...prev, newHistoryItem]);
+      
+      // Update the selected suggestion with the new image
+      if (result.imageUrl && selectedSuggestion) {
+        const updatedSuggestion = {
+          ...selectedSuggestion,
+          generatedImageUrl: result.imageUrl,
+          revisedPrompt: result.dallePrompt
+        };
+        
+        setSelectedSuggestion(updatedSuggestion);
+        
+        // Also update the suggestion in the suggestions list
+        setSuggestions(prev => 
+          prev.map(s => s.id === updatedSuggestion.id ? updatedSuggestion : s)
+        );
+      }
+      
+      // Add AI response to chat
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: generateAiResponse(content, selectedSuggestion),
+        content: `I've updated the image based on your request: "${content}". ${result.dallePrompt ? `\n\nPrompt used: "${result.dallePrompt}"` : ''}`,
         sender: 'ai',
         timestamp: new Date()
       };
       
       setChatMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+      
+    } catch (error) {
+      console.error('Error processing chat message:', error);
+      
+      // Add error message to chat
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: `Sorry, I encountered an error: ${error.message}`,
+        sender: 'ai',
+        timestamp: new Date()
+      };
+      
+      setChatMessages(prev => [...prev, errorMessage]);
+      toast.error('Failed to process your request');
+    } finally {
+      setIsProcessingChat(false);
+    }
   };
 
   const clearForm = () => {
@@ -164,6 +231,7 @@ export function useAdGenerator() {
     setSelectedSuggestion(null);
     setChatMessages([]);
     setEnhancedImage(null);
+    setChatHistory([]);
   };
 
   return {
@@ -176,11 +244,13 @@ export function useAdGenerator() {
     enhancedImage,
     enhancedImageError,
     isEnhancingImage,
+    isProcessingChat,
+    chatHistory,
     handleImageChange,
     handleInputChange,
     generateAds,
     selectSuggestion,
-    sendChatMessage,
+    sendChatMessage: sendChatMessageToAI,
     clearForm,
     setIsUploading
   };

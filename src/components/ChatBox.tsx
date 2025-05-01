@@ -6,15 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { SendIcon, User, Bot } from 'lucide-react';
+import { SendIcon, User, Bot, Loader2 } from 'lucide-react';
 
 interface ChatBoxProps {
   suggestion: AdSuggestion;
   messages: ChatMessage[];
   onSendMessage: (content: string) => void;
+  isProcessing?: boolean;
 }
 
-const ChatBox: React.FC<ChatBoxProps> = ({ suggestion, messages, onSendMessage }) => {
+const ChatBox: React.FC<ChatBoxProps> = ({ suggestion, messages, onSendMessage, isProcessing = false }) => {
   const [inputMessage, setInputMessage] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
@@ -27,7 +28,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ suggestion, messages, onSendMessage }
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputMessage.trim()) {
+    if (inputMessage.trim() && !isProcessing) {
       onSendMessage(inputMessage);
       setInputMessage('');
     }
@@ -83,6 +84,17 @@ const ChatBox: React.FC<ChatBoxProps> = ({ suggestion, messages, onSendMessage }
                 </div>
               </div>
             ))}
+            
+            {isProcessing && (
+              <div className="flex justify-start">
+                <div className="flex items-center max-w-[80%] bg-muted p-3 rounded-lg">
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <div>
+                    <p className="text-sm">Generating response...</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
       </CardContent>
@@ -92,11 +104,16 @@ const ChatBox: React.FC<ChatBoxProps> = ({ suggestion, messages, onSendMessage }
           <Input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Ask how to improve this ad..."
+            placeholder={isProcessing ? "Processing..." : "Ask how to improve this ad..."}
             className="flex-grow"
+            disabled={isProcessing}
           />
-          <Button type="submit" size="icon">
-            <SendIcon className="h-4 w-4" />
+          <Button type="submit" size="icon" disabled={isProcessing}>
+            {isProcessing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <SendIcon className="h-4 w-4" />
+            )}
           </Button>
         </form>
       </CardFooter>

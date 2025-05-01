@@ -26,6 +26,12 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
+export interface ChatHistoryItem {
+  userInstruction: string;
+  dallePrompt?: string;
+  imageUrl?: string;
+}
+
 export interface AdCategory {
   category: string;
   description: string;

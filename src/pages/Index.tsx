@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useAdGenerator } from '@/hooks/use-ad-generator';
 import AdForm from '@/components/AdForm';
@@ -25,7 +26,8 @@ const Index = () => {
     selectSuggestion,
     sendChatMessage,
     clearForm,
-    setIsUploading
+    setIsUploading,
+    isProcessingChat
   } = useAdGenerator();
 
   // Track whether we're in the suggestion view
@@ -75,6 +77,22 @@ const Index = () => {
                     <p className="text-sm">{selectedSuggestion.imageRecommendation}</p>
                     <p className="text-xs text-muted-foreground mt-1">Recommended size: {selectedSuggestion.dimensions}</p>
                   </div>
+                  
+                  {selectedSuggestion.generatedImageUrl && (
+                    <div className="mt-4">
+                      <h4 className="font-medium mb-2">Generated Image</h4>
+                      <img 
+                        src={selectedSuggestion.generatedImageUrl} 
+                        alt="AI Generated Ad Image" 
+                        className="w-full rounded-md border border-border"
+                      />
+                      {selectedSuggestion.revisedPrompt && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {selectedSuggestion.revisedPrompt}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -82,6 +100,7 @@ const Index = () => {
                 suggestion={selectedSuggestion} 
                 messages={chatMessages}
                 onSendMessage={sendChatMessage}
+                isProcessing={isProcessingChat}
               />
             </div>
           </div>

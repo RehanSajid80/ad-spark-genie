@@ -1,7 +1,7 @@
-
-import { AdSuggestion, AdCategory } from '../types/ad-types';
+import { AdSuggestion, AdCategory, ChatMessage } from '../types/ad-types';
 
 const N8N_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/1483ba42-2449-4934-b2c9-4b8dc1ec4a34';
+const N8N_CHAT_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/acd81780-1f22-46ed-a9f3-e035443ad805';
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -199,7 +199,56 @@ export const trackPageView = async (categorySlug: string): Promise<void> => {
   }
 };
 
-// Helper function to generate mock ad suggestions based on target audience and topic area
+// New function to handle chat messages and image generation
+export const sendChatMessage = async (
+  chatHistory: {
+    userInstruction: string;
+    dallePrompt?: string;
+    imageUrl?: string;
+  }[],
+  currentInstruction: string,
+  currentImageUrl: string
+): Promise<{
+  dallePrompt?: string;
+  imageUrl?: string;
+  error?: string;
+}> => {
+  try {
+    const payload = {
+      chatHistory,
+      currentInstruction,
+      currentImageUrl
+    };
+
+    console.log('Sending chat payload to n8n:', payload);
+
+    const response = await fetch(N8N_CHAT_WEBHOOK_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Received chat response from n8n:', data);
+      
+      return {
+        dallePrompt: data.dallePrompt || data.revised_prompt,
+        imageUrl: data.imageUrl || data.url,
+      };
+    } else {
+      console.error('Error response from n8n chat webhook:', await response.text());
+      return { error: 'Failed to generate new image' };
+    }
+  } catch (error) {
+    console.error('Error sending chat message:', error);
+    return { error: 'An error occurred while processing your request' };
+  }
+};
+
+// Helper function to generate mock suggestions based on target audience and topic area
 const generateMockSuggestions = (targetAudience: string, topicArea: string): AdSuggestion[] => {
   console.log(`Generating mock suggestions for audience: ${targetAudience}, topic: ${topicArea}`);
   
