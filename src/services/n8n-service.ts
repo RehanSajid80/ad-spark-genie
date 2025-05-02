@@ -199,7 +199,7 @@ export const trackPageView = async (categorySlug: string): Promise<void> => {
   }
 };
 
-// New function to handle chat messages and image generation
+// Function to handle chat messages and image generation
 export const sendChatMessage = async (
   chatHistory: {
     userInstruction: string;

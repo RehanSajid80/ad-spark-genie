@@ -45,6 +45,7 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
     // If we have a generated image from the API, use that first
     if (generatedImageUrl) {
       setCardImage(generatedImageUrl);
+      setImageError(false); // Reset error state when we get a new URL
       return;
     }
     
@@ -109,8 +110,12 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
                 src={generatedImageUrl} 
                 alt="Generated Ad Image" 
                 className="w-full rounded-md border border-border"
-                onLoad={() => console.log(`Card ${suggestion.id} - AI generated image loaded successfully`)}
+                onLoad={() => {
+                  console.log(`Card ${suggestion.id} - AI generated image loaded successfully`);
+                  setImageError(false);
+                }}
                 onError={(e) => {
+                  console.error(`Error loading image for card ${suggestion.id}:`, e);
                   setImageError(true);
                   setCardImage("/lovable-uploads/32455e0f-c91f-4dce-ae71-9f815d8df69f.png");
                 }}
@@ -138,6 +143,7 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
                     className="w-full rounded-md border border-border"
                     onLoad={() => console.log(`Card ${suggestion.id} - Image loaded successfully`)}
                     onError={(e) => {
+                      console.error(`Error loading image for card ${suggestion.id}:`, e);
                       setImageError(true);
                     }}
                   />
