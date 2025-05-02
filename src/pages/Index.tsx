@@ -8,7 +8,7 @@ import CategoryFeatures from '@/components/CategoryFeatures';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Download } from 'lucide-react';
 import { uploadDefaultImage } from '@/utils/uploadDefaultImage';
 import { toast } from 'sonner';
 
@@ -43,6 +43,29 @@ const Index = () => {
     });
   }, []);
 
+  // Function to handle image download
+  const handleImageDownload = () => {
+    if (selectedSuggestion?.generatedImageUrl) {
+      // Create a temporary anchor element
+      const link = document.createElement('a');
+      link.href = selectedSuggestion.generatedImageUrl;
+      
+      // Set filename based on the ad platform and timestamp
+      const platform = selectedSuggestion.platform;
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      link.download = `${platform}-ad-image-${timestamp}.png`;
+      
+      // Append to the document, trigger click and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Image download started');
+    } else {
+      toast.error('No image available to download');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-purple-gradient">
       <Header />
@@ -63,7 +86,19 @@ const Index = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h2 className="text-xl font-semibold mb-4">Selected Ad</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Selected Ad</h2>
+                  {selectedSuggestion?.generatedImageUrl && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleImageDownload}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Image
+                    </Button>
+                  )}
+                </div>
                 <div className="bg-white rounded-lg p-6 shadow-sm border border-border">
                   <div className="mb-4">
                     <h3 className="font-medium text-lg">{selectedSuggestion.headline}</h3>
