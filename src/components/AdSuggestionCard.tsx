@@ -39,6 +39,15 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  // Effect to update card image when generatedImageUrl changes
+  useEffect(() => {
+    console.log(`Card ${suggestion.id} - generatedImageUrl updated:`, generatedImageUrl);
+    if (generatedImageUrl) {
+      setCardImage(generatedImageUrl);
+      setImageError(false);
+    }
+  }, [generatedImageUrl, suggestion.id]);
+
   useEffect(() => {
     let ignore = false;
     

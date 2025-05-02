@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { AdInput, AdSuggestion, ChatMessage, ChatHistoryItem } from '../types/ad-types';
 import { generateAdSuggestions, sendChatMessage } from '../services/n8n-service';
@@ -176,6 +177,8 @@ export function useAdGenerator() {
       
       // Update the selected suggestion with the new image
       if (result.imageUrl && selectedSuggestion) {
+        console.log('Updating selected suggestion with new image URL:', result.imageUrl);
+        
         const updatedSuggestion = {
           ...selectedSuggestion,
           generatedImageUrl: result.imageUrl,
@@ -188,6 +191,8 @@ export function useAdGenerator() {
         setSuggestions(prev => 
           prev.map(s => s.id === updatedSuggestion.id ? updatedSuggestion : s)
         );
+      } else {
+        console.warn('No image URL returned from API or no selected suggestion');
       }
       
       // Add AI response to chat

@@ -1,4 +1,4 @@
-import { AdSuggestion, AdCategory, ChatMessage } from '../types/ad-types';
+import { AdSuggestion, AdCategory, ChatMessage, ChatHistoryItem } from '../types/ad-types';
 
 const N8N_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/1483ba42-2449-4934-b2c9-4b8dc1ec4a34';
 const N8N_CHAT_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/acd81780-1f22-46ed-a9f3-e035443ad805';
@@ -201,11 +201,7 @@ export const trackPageView = async (categorySlug: string): Promise<void> => {
 
 // Function to handle chat messages and image generation
 export const sendChatMessage = async (
-  chatHistory: {
-    userInstruction: string;
-    dallePrompt?: string;
-    imageUrl?: string;
-  }[],
+  chatHistory: ChatHistoryItem[],
   currentInstruction: string,
   currentImageUrl: string
 ): Promise<{
@@ -234,10 +230,19 @@ export const sendChatMessage = async (
       const data = await response.json();
       console.log('Received chat response from n8n:', data);
       
-      return {
-        dallePrompt: data.dallePrompt || data.revised_prompt,
-        imageUrl: data.imageUrl || data.url,
-      };
+      // Handle both response formats - direct and images array format
+      if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+        console.log('Response contains images array:', data.images);
+        return {
+          dallePrompt: data.images[0].revised_prompt,
+          imageUrl: data.images[0].url,
+        };
+      } else {
+        return {
+          dallePrompt: data.dallePrompt || data.revised_prompt,
+          imageUrl: data.imageUrl || data.url,
+        };
+      }
     } else {
       console.error('Error response from n8n chat webhook:', await response.text());
       return { error: 'Failed to generate new image' };

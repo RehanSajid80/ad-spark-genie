@@ -82,9 +82,14 @@ const Index = () => {
                     <div className="mt-4">
                       <h4 className="font-medium mb-2">Generated Image</h4>
                       <img 
+                        key={selectedSuggestion.generatedImageUrl} // Add key to force re-render when URL changes
                         src={selectedSuggestion.generatedImageUrl} 
                         alt="AI Generated Ad Image" 
                         className="w-full rounded-md border border-border"
+                        onError={(e) => {
+                          console.error('Error loading image in detail view:', e);
+                          toast.error('Failed to load generated image');
+                        }}
                       />
                       {selectedSuggestion.revisedPrompt && (
                         <p className="text-xs text-muted-foreground mt-2">
