@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useAdGenerator } from '@/hooks/use-ad-generator';
 import AdForm from '@/components/AdForm';
@@ -46,41 +45,34 @@ const Index = () => {
   // Function to handle image download
   const handleImageDownload = () => {
     if (selectedSuggestion?.generatedImageUrl) {
-      // Fetch the image as a blob directly
-      fetch(selectedSuggestion.generatedImageUrl)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.blob();
-        })
-        .then(blob => {
-          // Create a blob URL for the image
-          const blobUrl = URL.createObjectURL(blob);
-          
-          // Create a temporary anchor element
-          const link = document.createElement('a');
-          link.href = blobUrl;
-          
-          // Set filename based on the ad platform and timestamp
-          const platform = selectedSuggestion.platform;
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          link.download = `${platform}-ad-image-${timestamp}.png`;
-          
-          // Append to the document, trigger click and remove
-          document.body.appendChild(link);
-          link.click();
-          
-          // Clean up
-          document.body.removeChild(link);
-          URL.revokeObjectURL(blobUrl); // Release the blob URL
-          
-          toast.success('Image download started');
-        })
-        .catch(error => {
-          console.error('Error downloading image:', error);
-          toast.error('Failed to download image');
-        });
+      try {
+        // Create a simple link with the image URL and trigger a download
+        // The image will open in a new tab if direct download fails due to CORS
+        const link = document.createElement('a');
+        
+        // Use the image URL directly (browser will handle the request)
+        link.href = selectedSuggestion.generatedImageUrl;
+        
+        // Set download attribute to suggest downloading instead of navigation
+        // Set filename based on the ad platform and timestamp
+        const platform = selectedSuggestion.platform;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        link.download = `${platform}-ad-image-${timestamp}.png`;
+        
+        // Configure to open in new tab if download fails due to CORS
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        
+        // Append to the document, trigger click and remove
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast.success('Image download initiated');
+      } catch (error) {
+        console.error('Error initiating image download:', error);
+        toast.error('Could not download image, try right-clicking and using "Save image as..."');
+      }
     } else {
       toast.error('No image available to download');
     }
