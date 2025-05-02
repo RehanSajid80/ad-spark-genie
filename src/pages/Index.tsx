@@ -46,21 +46,41 @@ const Index = () => {
   // Function to handle image download
   const handleImageDownload = () => {
     if (selectedSuggestion?.generatedImageUrl) {
-      // Create a temporary anchor element
-      const link = document.createElement('a');
-      link.href = selectedSuggestion.generatedImageUrl;
-      
-      // Set filename based on the ad platform and timestamp
-      const platform = selectedSuggestion.platform;
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      link.download = `${platform}-ad-image-${timestamp}.png`;
-      
-      // Append to the document, trigger click and remove
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success('Image download started');
+      // Fetch the image as a blob directly
+      fetch(selectedSuggestion.generatedImageUrl)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          // Create a blob URL for the image
+          const blobUrl = URL.createObjectURL(blob);
+          
+          // Create a temporary anchor element
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          
+          // Set filename based on the ad platform and timestamp
+          const platform = selectedSuggestion.platform;
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          link.download = `${platform}-ad-image-${timestamp}.png`;
+          
+          // Append to the document, trigger click and remove
+          document.body.appendChild(link);
+          link.click();
+          
+          // Clean up
+          document.body.removeChild(link);
+          URL.revokeObjectURL(blobUrl); // Release the blob URL
+          
+          toast.success('Image download started');
+        })
+        .catch(error => {
+          console.error('Error downloading image:', error);
+          toast.error('Failed to download image');
+        });
     } else {
       toast.error('No image available to download');
     }
