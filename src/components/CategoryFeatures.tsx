@@ -1,87 +1,113 @@
-
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { AdCategory } from '@/types/ad-types';
-import { fetchAdCategories, trackPageView } from '@/services/n8n-service';
 
 const CategoryFeatures: React.FC = () => {
   const [categories, setCategories] = useState<AdCategory[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadCategories = async () => {
+    const fetchAdCategories = async () => {
+      setIsLoading(true);
       try {
-        const data = await fetchAdCategories();
-        setCategories(data);
-        
-        // Track page view for first category if available
-        if (data.length > 0) {
-          const slug = data[0].category.toLowerCase().replace(/\s+/g, '-');
-          await trackPageView(slug);
-        }
-      } catch (error) {
-        console.error('Error loading categories:', error);
-      } finally {
-        setLoading(false);
+        // Simulate fetching data from an API
+        const mockData = [
+          {
+            category: "Property Management",
+            description: "Solutions for efficient property management.",
+            trending_topics: ["Tenant Communication", "Maintenance Automation"],
+            timestamp: new Date().toISOString(),
+            metadata: { background_style: "bg-blue-500" }
+          },
+          {
+            category: "Real Estate Marketing",
+            description: "Strategies for effective real estate marketing.",
+            trending_topics: ["Virtual Tours", "Social Media Ads"],
+            timestamp: new Date().toISOString(),
+            metadata: { background_style: "bg-green-500" }
+          },
+          {
+            category: "Facility Management",
+            description: "Streamlining facility operations and maintenance.",
+            trending_topics: ["Energy Efficiency", "Smart Buildings"],
+            timestamp: new Date().toISOString(),
+            metadata: { background_style: "bg-yellow-500" }
+          },
+        ];
+
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        setCategories(mockData as AdCategory[]);
+        setIsLoading(false);
+      } catch (err: any) {
+        setError(err.message || "Failed to fetch categories");
+        setIsLoading(false);
       }
     };
 
-    loadCategories();
+    fetchAdCategories();
   }, []);
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="w-full py-8">
-        <div className="flex justify-center items-center">
-          <div className="animate-pulse flex space-x-4">
-            <div className="flex-1 space-y-6 py-1">
-              <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-              <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="h-20 bg-slate-200 rounded col-span-1"></div>
-                  <div className="h-20 bg-slate-200 rounded col-span-1"></div>
-                  <div className="h-20 bg-slate-200 rounded col-span-1"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Ad Category Features</CardTitle>
+          <CardDescription>Explore trending topics and solutions.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Skeleton className="h-4 w-[200px]" />
+          <Skeleton className="h-4 w-[150px]" />
+          <Skeleton className="h-4 w-[100px]" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Error</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-red-500">{error}</p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="w-full py-8">
-      <h2 className="text-xl font-semibold mb-6">Current Ad Trends</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {categories.map((category, index) => (
-          <Card 
-            key={index} 
-            className={`overflow-hidden transition-all hover:shadow-md ${category.metadata.background_style}`}
-          >
-            <CardHeader>
-              <CardTitle className="text-lg">{category.category}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm mb-4">{category.description}</p>
-              <div className="space-y-2">
-                <h4 className="text-xs font-medium uppercase text-muted-foreground">Trending Topics</h4>
-                <ul className="space-y-2">
-                  {category.trending_topics.map((topic, topicIndex) => (
-                    <li 
-                      key={topicIndex} 
-                      className="text-sm bg-white bg-opacity-60 px-3 py-2 rounded-md shadow-sm"
-                    >
-                      {topic}
-                    </li>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Ad Category Features</CardTitle>
+        <CardDescription>Explore trending topics and solutions.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[200px] w-full">
+          <div className="flex flex-col space-y-4 p-4">
+            {categories.map((cat, index) => (
+              <div key={index} className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Badge className="uppercase text-xs font-bold">{cat.category}</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">{cat.description}</p>
+                <div className="flex space-x-2">
+                  {cat.trending_topics.map((topic, i) => (
+                    <Badge key={i} variant="secondary">{topic}</Badge>
                   ))}
-                </ul>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 };
 
