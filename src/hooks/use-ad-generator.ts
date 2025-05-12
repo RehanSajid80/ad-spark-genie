@@ -1,9 +1,11 @@
 
+import { useState } from 'react';
 import { useAdInput } from './use-ad-input';
 import { useSuggestions } from './use-suggestions';
 import { useChat } from './use-chat';
 import { useEnhancedImage } from './use-enhanced-image';
 import { generateAdSuggestions, sendChatMessage as sendChatMessageToAPI } from '../services/n8n-service';
+import { AdSuggestion } from '../types/ad-types';
 import { toast } from 'sonner';
 
 export function useAdGenerator() {
