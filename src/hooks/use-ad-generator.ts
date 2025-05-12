@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { AdInput, AdSuggestion, ChatMessage, ChatHistoryItem } from '../types/ad-types';
-import { generateAdSuggestions, sendChatMessage } from '../services/n8n-service';
+import { generateAdSuggestions, sendChatMessage as sendChatMessageToAPI } from '../services/n8n-service';
 import { enhanceOfficeImage } from '../services/enhance-image-service';
 import { toast } from 'sonner';
 
@@ -132,7 +132,7 @@ export function useAdGenerator() {
     }
   };
 
-  const sendChatMessageToAI = async (content: string) => {
+  const sendChatMessage = async (content: string) => {
     if (!content.trim() || !selectedSuggestion) return;
     
     // Add user message to chat
@@ -156,7 +156,7 @@ export function useAdGenerator() {
       }
       
       // Send the chat message to the API
-      const result = await sendChatMessage(
+      const result = await sendChatMessageToAPI(
         chatHistory,
         content,
         currentImageUrl
@@ -255,7 +255,7 @@ export function useAdGenerator() {
     handleInputChange,
     generateAds,
     selectSuggestion,
-    sendChatMessage: sendChatMessageToAI,
+    sendChatMessage,
     clearForm,
     setIsUploading
   };

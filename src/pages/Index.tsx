@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useAdGenerator } from '@/hooks/use-ad-generator';
 import AdForm from '@/components/AdForm';
 import AdSuggestionList from '@/components/AdSuggestionList';
@@ -7,9 +8,11 @@ import CategoryFeatures from '@/components/CategoryFeatures';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, RefreshCw, Download } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Download, SaveAll } from 'lucide-react';
 import { uploadDefaultImage } from '@/utils/uploadDefaultImage';
 import { toast } from 'sonner';
+import { storeGeneratedImage, getGeneratedImagesForSuggestion } from '@/services/generated-image-service';
+import ImageHistory from '@/components/ImageHistory';
 
 const Index = () => {
   const {
@@ -33,6 +36,10 @@ const Index = () => {
   const showSuggestions = suggestions.length > 0;
   // Track whether we're in chat/refinement view
   const showChat = selectedSuggestion !== null;
+  // State for image history
+  const [imageHistory, setImageHistory] = useState<any[]>([]);
+  // State for tracking if we're saving an image
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     // Upload the default image when the component mounts
@@ -41,6 +48,19 @@ const Index = () => {
       toast.error('Failed to upload default image');
     });
   }, []);
+
+  // Load image history when a suggestion is selected
+  useEffect(() => {
+    if (selectedSuggestion?.id) {
+      loadImageHistory(selectedSuggestion.id);
+    }
+  }, [selectedSuggestion]);
+
+  // Function to load image history for a suggestion
+  const loadImageHistory = async (suggestionId: string) => {
+    const images = await getGeneratedImagesForSuggestion(suggestionId);
+    setImageHistory(images);
+  };
 
   // Function to handle image download
   const handleImageDownload = () => {
@@ -78,6 +98,70 @@ const Index = () => {
     }
   };
 
+  // Function to save image to Supabase
+  const handleSaveToSupabase = async () => {
+    if (selectedSuggestion?.generatedImageUrl && selectedSuggestion) {
+      try {
+        setIsSaving(true);
+        const imageId = await storeGeneratedImage(
+          selectedSuggestion.generatedImageUrl,
+          selectedSuggestion
+        );
+        
+        if (imageId) {
+          toast.success('Image saved successfully');
+          // Refresh image history
+          await loadImageHistory(selectedSuggestion.id);
+        }
+      } catch (error) {
+        console.error('Error saving image to Supabase:', error);
+        toast.error('Failed to save image');
+      } finally {
+        setIsSaving(false);
+      }
+    } else {
+      toast.error('No image available to save');
+    }
+  };
+
+  // Function to handle sending a chat message with scroll to new image
+  const handleSendChatMessage = async (content: string) => {
+    await sendChatMessage(content);
+    
+    // Add small delay to ensure image is loaded and then scroll
+    setTimeout(() => {
+      const imageElements = document.querySelectorAll('img[src="' + selectedSuggestion?.generatedImageUrl + '"]');
+      if (imageElements.length > 0) {
+        imageElements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 1000);
+
+    // Store the image in Supabase once it's generated (with a delay to ensure it's ready)
+    if (selectedSuggestion) {
+      setTimeout(async () => {
+        if (selectedSuggestion.generatedImageUrl) {
+          await storeGeneratedImage(
+            selectedSuggestion.generatedImageUrl,
+            selectedSuggestion,
+            content
+          );
+          await loadImageHistory(selectedSuggestion.id);
+        }
+      }, 1500);
+    }
+  };
+
+  // Function to select an image from history and update the current suggestion
+  const selectImageFromHistory = (imageUrl: string) => {
+    if (selectedSuggestion) {
+      const updatedSuggestion = {
+        ...selectedSuggestion,
+        generatedImageUrl: imageUrl
+      };
+      selectSuggestion(updatedSuggestion);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-purple-gradient">
       <Header />
@@ -96,19 +180,31 @@ const Index = () => {
               Back to Suggestions
             </Button>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+              <div className="md:col-span-5">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Selected Ad</h2>
                   {selectedSuggestion?.generatedImageUrl && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleImageDownload}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Image
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleSaveToSupabase}
+                        disabled={isSaving}
+                      >
+                        <SaveAll className="h-4 w-4 mr-2" />
+                        {isSaving ? 'Saving...' : 'Save to Supabase'}
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleImageDownload}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Image
+                      </Button>
+                    </div>
                   )}
                 </div>
                 <div className="bg-white rounded-lg p-6 shadow-sm border border-border">
@@ -146,14 +242,25 @@ const Index = () => {
                     </div>
                   )}
                 </div>
+                
+                {/* Image History Section */}
+                <div className="mt-6 bg-white rounded-lg p-4 shadow-sm border border-border">
+                  <ImageHistory 
+                    images={imageHistory} 
+                    onSelect={selectImageFromHistory}
+                    selectedImageUrl={selectedSuggestion.generatedImageUrl}
+                  />
+                </div>
               </div>
               
-              <ChatBox 
-                suggestion={selectedSuggestion} 
-                messages={chatMessages}
-                onSendMessage={sendChatMessage}
-                isProcessing={isProcessingChat}
-              />
+              <div className="md:col-span-7">
+                <ChatBox 
+                  suggestion={selectedSuggestion} 
+                  messages={chatMessages}
+                  onSendMessage={handleSendChatMessage}
+                  isProcessing={isProcessingChat}
+                />
+              </div>
             </div>
           </div>
         ) : showSuggestions ? (
