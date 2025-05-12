@@ -6,6 +6,3 @@ verify_jwt = false
 
 [functions.enhance-office-image]
 verify_jwt = false
-
-[functions.log-api-call]
-verify_jwt = false

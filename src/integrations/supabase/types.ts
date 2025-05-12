@@ -45,39 +45,6 @@ export type Database = {
         }
         Relationships: []
       }
-      generated_images: {
-        Row: {
-          chat_message: string | null
-          created_at: string
-          id: string
-          image_url: string
-          metadata: Json | null
-          platform: string | null
-          prompt: string | null
-          suggestion_id: string | null
-        }
-        Insert: {
-          chat_message?: string | null
-          created_at?: string
-          id?: string
-          image_url: string
-          metadata?: Json | null
-          platform?: string | null
-          prompt?: string | null
-          suggestion_id?: string | null
-        }
-        Update: {
-          chat_message?: string | null
-          created_at?: string
-          id?: string
-          image_url?: string
-          metadata?: Json | null
-          platform?: string | null
-          prompt?: string | null
-          suggestion_id?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
