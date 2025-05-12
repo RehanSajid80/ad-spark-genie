@@ -1,381 +1,105 @@
-
-import { AdSuggestion, AdCategory, ChatMessage, ChatHistoryItem } from '../types/ad-types';
-import { ApiLogger } from './api-logger';
-
-const N8N_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/1483ba42-2449-4934-b2c9-4b8dc1ec4a34';
-const N8N_CHAT_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/acd81780-1f22-46ed-a9f3-e035443ad805';
-
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-  });
-};
-
-export const generateAdSuggestions = async (
+import { AdInput, AdSuggestion } from '@/types/ad-types';
+import { ChatHistoryItem } from '../types/ad-types';
+// Function to generate ad suggestions
+export async function generateAdSuggestions(
   image: File | null,
   context: string,
   brandGuidelines: string,
   landingPageUrl: string,
   targetAudience: string,
   topicArea: string
-): Promise<AdSuggestion[]> => {
+): Promise<AdSuggestion[]> {
   try {
-    // Generate mock suggestions first
-    const suggestions = generateMockSuggestions(targetAudience, topicArea);
-    
-    // Convert image to base64 if it exists
-    let base64Image = null;
+    const formData = new FormData();
     if (image) {
-      base64Image = await fileToBase64(image);
-      console.log('Image converted to base64 for n8n webhook');
+      formData.append('image', image);
     }
-    
-    // Prepare request payload
-    const requestPayload = {
-      input: {
-        context,
-        brand_guidelines: brandGuidelines,
-        landing_page_url: landingPageUrl,
-        target_audience: targetAudience,
-        topic_area: topicArea,
-        timestamp: new Date().toISOString()
-      },
-      generated_suggestions: suggestions,
-      uploadedImage: base64Image
-    };
-    
-    // Send both input, generated suggestions and image data to webhook using our logger
-    try {
-      const response = await ApiLogger.timeAndLogApiCall(
-        'ad-generator',
-        'N8N',
-        'generate-ad-suggestions',
-        async () => {
-          const resp = await fetch(N8N_WEBHOOK_ENDPOINT, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestPayload),
-          });
-          
-          if (!resp.ok) {
-            throw new Error(`N8N webhook error: ${resp.status} ${resp.statusText}`);
-          }
-          
-          return await resp.json();
-        },
-        requestPayload,
-        { imageIncluded: !!image }
-      );
-      
-      console.log('Received response from n8n:', response);
-      
-      // Update the suggestions with generated images if available
-      if (response.images && Array.isArray(response.images)) {
-        console.log(`Received ${response.images.length} generated images`);
-        
-        // Assign image URLs to suggestions based on platform
-        // LinkedIn ads get first image (if available)
-        const linkedInSuggestions = suggestions.filter(s => s.platform === 'linkedin');
-        const googleSuggestions = suggestions.filter(s => s.platform === 'google');
-        
-        response.images.forEach((img, index) => {
-          if (index < linkedInSuggestions.length && img.url) {
-            console.log(`Assigning image ${index} to LinkedIn suggestion`);
-            linkedInSuggestions[index].generatedImageUrl = img.url;
-            linkedInSuggestions[index].revisedPrompt = img.revised_prompt;
-          } else if (img.url) {
-            // Assign to Google ads if there are more images than LinkedIn suggestions
-            const googleIndex = index - linkedInSuggestions.length;
-            if (googleIndex < googleSuggestions.length) {
-              console.log(`Assigning image ${index} to Google suggestion`);
-              googleSuggestions[googleIndex].generatedImageUrl = img.url;
-              googleSuggestions[googleIndex].revisedPrompt = img.revised_prompt;
-            }
-          }
-        });
+    formData.append('context', context);
+    formData.append('brand_guidelines', brandGuidelines);
+    formData.append('landing_page_url', landingPageUrl);
+    formData.append('target_audience', targetAudience);
+    formData.append('topic_area', topicArea);
+
+    const response = await fetch(
+      'https://n8n.creativeloop.ai/webhook/ad-generator',
+      {
+        method: 'POST',
+        body: formData,
       }
-    } catch (err) {
-      console.log('Error calling n8n webhook:', err);
-      // Still log failed API calls
-      ApiLogger.logApiCall({
-        agent_id: 'ad-generator',
-        api_name: 'N8N',
-        endpoint: 'generate-ad-suggestions',
-        error: err instanceof Error ? err.message : String(err),
-        request_payload: requestPayload
-      });
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    const results = await response.json();
     
-    // Simulating a network delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    return suggestions;
+    // Map the results to the AdSuggestion type
+    const adSuggestions: AdSuggestion[] = results.map((item: any) => ({
+      id: item.id,
+      platform: item.platform,
+      headline: item.headline,
+      description: item.description,
+      imageRecommendation: item.image_recommendation,
+      dimensions: item.dimensions,
+      generatedImageUrl: item.generated_image_url || null,
+      revisedPrompt: item.revised_prompt || null
+    }));
+
+    return adSuggestions;
   } catch (error) {
     console.error('Error generating ad suggestions:', error);
-    throw new Error('Failed to generate ad suggestions');
+    throw error;
   }
-};
+}
 
-export const fetchAdCategories = async (): Promise<AdCategory[]> => {
-  try {
-    // Define payload for tracking
-    const requestPayload = {
-      category: "Tenant Experience",
-      description: "Enhancing the experience of tenants through digital platforms and services",
-      trending_topics: [
-        "Tenant Communication Apps",
-        "Rent Payment Solutions",
-        "Building Community Platforms"
-      ],
-      timestamp: new Date().toISOString(),
-      metadata: {
-        background_style: "bg-gradient-to-r from-violet-50 to-purple-50"
-      }
-    };
-
-    // Try to fetch from n8n with logging
-    try {
-      await ApiLogger.timeAndLogApiCall(
-        'categories-service',
-        'N8N',
-        'fetch-categories',
-        async () => {
-          const response = await fetch(N8N_WEBHOOK_ENDPOINT, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            mode: 'no-cors',
-            body: JSON.stringify(requestPayload),
-          });
-          return response;
-        },
-        requestPayload
-      );
-      console.log('Categories request sent to n8n successfully');
-    } catch (err) {
-      console.log('Non-fatal error fetching from n8n:', err);
-    }
-    
-    // Since we're likely getting a CORS issue or no direct response from the n8n webhook,
-    // let's simulate a response
-    return [
-      {
-        category: "Tenant Experience",
-        description: "Enhancing the experience of tenants through digital platforms and services",
-        trending_topics: [
-          "Tenant Communication Apps", 
-          "Rent Payment Solutions", 
-          "Building Community Platforms"
-        ],
-        timestamp: new Date().toISOString(),
-        metadata: {
-          background_style: "bg-gradient-to-r from-violet-50 to-purple-50"
-        }
-      },
-      {
-        category: "Real Estate Technology",
-        description: "Modern solutions for property management and real estate services",
-        trending_topics: [
-          "Property Management Software", 
-          "Virtual Tours", 
-          "Smart Building Technology"
-        ],
-        timestamp: new Date().toISOString(),
-        metadata: {
-          background_style: "bg-gradient-to-r from-blue-50 to-indigo-50"
-        }
-      },
-      {
-        category: "Office Space Solutions",
-        description: "Innovative approaches to workspace management and optimization",
-        trending_topics: [
-          "Flexible Workspaces", 
-          "Office Space Planning", 
-          "Desk Booking Systems"
-        ],
-        timestamp: new Date().toISOString(),
-        metadata: {
-          background_style: "bg-gradient-to-r from-green-50 to-emerald-50"
-        }
-      }
-    ];
-  } catch (error) {
-    console.error('Error fetching ad categories:', error);
-    return [];
-  }
-};
-
-export const trackPageView = async (categorySlug: string): Promise<void> => {
-  try {
-    const requestPayload = {
-      category: "Tenant Experience",
-      page_view: true,
-      request_type: "ai_analysis",
-      timestamp: new Date().toISOString(),
-      category_slug: categorySlug
-    };
-
-    await ApiLogger.timeAndLogApiCall(
-      'page-tracker',
-      'N8N',
-      'track-page-view',
-      async () => {
-        const response = await fetch(N8N_WEBHOOK_ENDPOINT, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          mode: 'no-cors',
-          body: JSON.stringify(requestPayload),
-        });
-        return response;
-      },
-      requestPayload
-    );
-    console.log('Page view tracked successfully');
-  } catch (error) {
-    console.error('Error tracking page view:', error);
-  }
-};
-
-// Function to handle chat messages and image generation
-export const sendChatMessage = async (
+// Function to send a chat message and get a revised image
+export async function sendChatMessage(
   chatHistory: ChatHistoryItem[],
-  currentInstruction: string,
+  userInstruction: string,
   currentImageUrl: string
 ): Promise<{
-  dallePrompt?: string;
   imageUrl?: string;
+  dallePrompt?: string;
   error?: string;
-}> => {
+}> {
   try {
     const payload = {
-      chatHistory,
-      currentInstruction,
-      currentImageUrl
+      chat_history: chatHistory,
+      user_instruction: userInstruction,
+      current_image_url: currentImageUrl
     };
-
-    console.log('Sending chat payload to n8n:', payload);
-
-    const response = await ApiLogger.timeAndLogApiCall(
-      'chat-service',
-      'N8N',
-      'send-chat-message',
-      async () => {
-        const resp = await fetch(N8N_CHAT_WEBHOOK_ENDPOINT, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-        
-        if (!resp.ok) {
-          throw new Error(`Chat webhook error: ${resp.status} ${resp.statusText}`);
-        }
-        
-        return await resp.json();
-      },
-      payload
+    
+    console.log('Sending chat message:', payload);
+    
+    // Call the n8n webhook to process the chat message
+    const response = await fetch(
+      'https://n8n.creativeloop.ai/webhook/ad-generator-chat',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      }
     );
 
-    console.log('Received chat response from n8n:', response);
-    
-    // Handle both response formats - direct and images array format
-    if (response.images && Array.isArray(response.images) && response.images.length > 0) {
-      console.log('Response contains images array:', response.images);
-      return {
-        dallePrompt: response.images[0].revised_prompt,
-        imageUrl: response.images[0].url,
-      };
-    } else {
-      return {
-        dallePrompt: response.dallePrompt || response.revised_prompt,
-        imageUrl: response.imageUrl || response.url,
-      };
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
     }
+
+    const data = await response.json();
+    
+    console.log('Chat message response:', data);
+    
+    return {
+      imageUrl: data.imageUrl,
+      dallePrompt: data.dallePrompt,
+      error: data.error
+    };
   } catch (error) {
-    console.error('Error sending chat message:', error);
-    return { error: 'An error occurred while processing your request' };
+    console.error('Error in sendChatMessage:', error);
+    return { error: error.message || 'Failed to process chat message' };
   }
-};
-
-// Helper function to generate mock suggestions based on target audience and topic area
-const generateMockSuggestions = (targetAudience: string, topicArea: string): AdSuggestion[] => {
-  console.log(`Generating mock suggestions for audience: ${targetAudience}, topic: ${topicArea}`);
-  
-  // Generate customized suggestions based on the target audience and topic
-  const linkedInSuggestions: AdSuggestion[] = [
-    {
-      id: 'li-1',
-      platform: 'linkedin',
-      headline: `Transform Your ${topicArea} Experience Today`,
-      description: `Discover how our integrated platform helps ${targetAudience} enhance communication, streamline operations, and build better experiences.`,
-      imageRecommendation: `Professional image showing ${targetAudience} using a digital solution in a modern setting`,
-      dimensions: '1200 x 627 pixels',
-      generatedImageUrl: null,
-      revisedPrompt: null
-    },
-    // {
-    //   id: 'li-2',
-    //   platform: 'linkedin',
-    //   headline: `Empower ${targetAudience} with Digital ${topicArea} Solutions`,
-    //   description: 'Our experience platform increases satisfaction rates by 35% and reduces management overhead by 20%.',
-    //   imageRecommendation: `Split-screen showing before/after of ${topicArea} management with digital transformation`,
-    //   dimensions: '1200 x 627 pixels',
-    //   generatedImageUrl: null,
-    //   revisedPrompt: null
-    // },
-    // {
-    //   id: 'li-3',
-    //   platform: 'linkedin',
-    //   headline: `The Future of ${topicArea} is Here`,
-    //   description: `Join 500+ ${targetAudience} who have revolutionized their experience with our all-in-one platform.`,
-    //   imageRecommendation: `Futuristic visualization of ${topicArea} with connected users`,
-    //   dimensions: '1200 x 627 pixels',
-    //   generatedImageUrl: null,
-    //   revisedPrompt: null
-    // }
-  ];
-
-  const googleSuggestions: AdSuggestion[] = [
-    {
-      id: 'g-1',
-      platform: 'google',
-      headline: `${topicArea} Platform | Boost Satisfaction`,
-      description: `Streamline ${targetAudience} experiences. Try free for 30 days!`,
-      imageRecommendation: 'Clean, minimal interface of the platform with key features highlighted',
-      dimensions: '1200 x 628 pixels',
-      generatedImageUrl: null,
-      revisedPrompt: null
-    },
-    // {
-    //   id: 'g-2',
-    //   platform: 'google',
-    //   headline: `${topicArea} Software | 35% More Efficient`,
-    //   description: `All-in-one solution for ${targetAudience}. Join 10,000+ happy users today!`,
-    //   imageRecommendation: 'Person smiling while using the platform on mobile and desktop',
-    //   dimensions: '1200 x 628 pixels',
-    //   generatedImageUrl: null,
-    //   revisedPrompt: null
-    // },
-    // {
-    //   id: 'g-3',
-    //   platform: 'google',
-    //   headline: `Digital ${topicArea} Portal | Easy Implementation`,
-    //   description: `Ready in 24 hours for ${targetAudience}. Seamless integration. Free demo.`,
-    //   imageRecommendation: 'Screenshot of the platform dashboard with analysis metrics',
-    //   dimensions: '1200 x 628 pixels',
-    //   generatedImageUrl: null,
-    //   revisedPrompt: null
-    // }
-  ];
-
-  return [...linkedInSuggestions, ...googleSuggestions];
-};
+}
