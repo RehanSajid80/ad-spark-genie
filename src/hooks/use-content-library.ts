@@ -6,8 +6,8 @@ export const useContentLibrary = () => {
   return useQuery({
     queryKey: ["content_libary"],
     queryFn: async () => {
-      // @ts-expect-error: Ignore types until content_libary is added to Supabase types
-      const { data, error } = await supabase
+      // TEMP TYPE WORKAROUND: Until 'content_libary' is present in supabase types.
+      const { data, error } = await (supabase as any)
         .from("content_libary")
         .select("*")
         .order("created_at", { ascending: false });
