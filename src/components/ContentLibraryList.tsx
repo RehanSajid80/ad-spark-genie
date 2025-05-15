@@ -43,6 +43,7 @@ const ContentLibraryList = () => {
             <TableHead>Topic Area</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Created</TableHead>
+            {/* Add more columns if desired */}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -57,6 +58,7 @@ const ContentLibraryList = () => {
                   ? new Date(item.created_at).toLocaleDateString()
                   : ""}
               </TableCell>
+              {/* More columns can be rendered here as needed */}
             </TableRow>
           ))}
         </TableBody>
