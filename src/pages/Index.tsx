@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useAdGenerator } from '@/hooks/use-ad-generator';
 import AdForm from '@/components/AdForm';
@@ -11,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, RefreshCw, Download } from 'lucide-react';
 import { uploadDefaultImage } from '@/utils/uploadDefaultImage';
 import { toast } from 'sonner';
+import ContentLibraryList from "@/components/ContentLibraryList";
 
 const Index = () => {
   const {
@@ -91,6 +91,11 @@ const Index = () => {
       <Header />
 
       <main className="container py-6">
+        {/* Show the Content Library above the rest as a demo */}
+        <div className="mb-10">
+          <h2 className="text-2xl font-bold mb-4">Content Library</h2>
+          <ContentLibraryList />
+        </div>
         {showChat ? (
           // Chat/Refinement View
           <div>
