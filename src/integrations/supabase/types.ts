@@ -45,6 +45,54 @@ export type Database = {
         }
         Relationships: []
       }
+      content_library: {
+        Row: {
+          content: string | null
+          content_type: string | null
+          created_at: string
+          id: string
+          is_saved: boolean
+          is_selected: boolean
+          keywords: string[] | null
+          parent_topic_id: string | null
+          reasoning: string | null
+          social_context: string | null
+          title: string | null
+          topic_area: string | null
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          is_saved?: boolean
+          is_selected?: boolean
+          keywords?: string[] | null
+          parent_topic_id?: string | null
+          reasoning?: string | null
+          social_context?: string | null
+          title?: string | null
+          topic_area?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          is_saved?: boolean
+          is_selected?: boolean
+          keywords?: string[] | null
+          parent_topic_id?: string | null
+          reasoning?: string | null
+          social_context?: string | null
+          title?: string | null
+          topic_area?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       generated_images: {
         Row: {
           chat_message: string | null
