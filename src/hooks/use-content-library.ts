@@ -6,6 +6,7 @@ export const useContentLibrary = () => {
   return useQuery({
     queryKey: ["content_libary"],
     queryFn: async () => {
+      // @ts-expect-error: Ignore types until content_libary is added to Supabase types
       const { data, error } = await supabase
         .from("content_libary")
         .select("*")
