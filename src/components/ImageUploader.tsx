@@ -28,58 +28,51 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     
-    if (!file) {
-      console.log("No file selected");
-      return;
-    }
+    if (file) {
+      console.log("File selected:", file.name, "size:", file.size, "type:", file.type);
       
-    console.log("File selected:", file.name, "size:", file.size, "type:", file.type);
+      if (!validateImage(file)) {
+        return;
+      }
       
-    if (!validateImage(file)) {
-      return;
-    }
+      setIsUploading(true);
+      setUploadProgress(10);
       
-    setIsUploading(true);
-    setUploadProgress(10);
-      
-    try {
-      // Create a preview
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        console.log("File loaded successfully, creating preview");
-        setPreview(result);
-        setUploadProgress(30);
-      };
+      try {
+        // Create a preview
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          console.log("File loaded successfully, creating preview");
+          setPreview(result);
+          setUploadProgress(30);
+        };
         
-      reader.onerror = () => {
-        console.error("Error reading file:", reader.error);
-        toast.error('Error loading image');
+        reader.onerror = () => {
+          console.error("Error reading file:", reader.error);
+          toast.error('Error loading image');
+          setIsUploading(false);
+          setUploadProgress(0);
+        };
+        
+        reader.readAsDataURL(file);
+        
+        const timestamp = new Date().toISOString();
+        const { publicUrl, fileName } = await uploadToStorage(file);
+        
+        await sendToWebhook(publicUrl, fileName, file, timestamp);
+        
+        setUploadProgress(100);
+        onImageChange(file);
+        
+      } catch (err) {
+        console.error("Unexpected error during upload:", err);
+        toast.error(`Unexpected error: ${err.message || 'Unknown error'}`);
         setIsUploading(false);
         setUploadProgress(0);
-      };
-        
-      reader.readAsDataURL(file);
-        
-      const timestamp = new Date().toISOString();
-      const { publicUrl, fileName } = await uploadToStorage(file);
-        
-      console.log("File uploaded, public URL:", publicUrl);
-        
-      await sendToWebhook(publicUrl, fileName, file, timestamp);
-        
-      setUploadProgress(100);
-      console.log("Calling onImageChange with file:", file.name);
-      // Make sure we're passing the file object to onImageChange
-      onImageChange(file);
-        
-    } catch (err: any) {
-      console.error("Unexpected error during upload:", err);
-      toast.error(`Upload failed: ${err.message || 'Unknown error'}`);
-      setIsUploading(false);
-      setUploadProgress(0);
-    } finally {
-      setIsUploading(false);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -128,9 +121,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         className="hidden"
       />
       
-      {preview || currentImage ? (
+      {preview ? (
         <ImagePreview
-          previewUrl={preview || (currentImage ? URL.createObjectURL(currentImage) : null)}
+          previewUrl={preview}
           uploadProgress={uploadProgress}
           onRemove={handleRemoveImage}
         />

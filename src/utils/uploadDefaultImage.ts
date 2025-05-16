@@ -1,44 +1,8 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const createBucketIfNotExists = async (bucketName: string) => {
-  try {
-    // Check if bucket exists
-    const { data: buckets } = await supabase.storage.listBuckets();
-    const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
-    
-    if (!bucketExists) {
-      console.log(`Bucket ${bucketName} doesn't exist, creating it...`);
-      const { data, error } = await supabase.storage.createBucket(bucketName, {
-        public: true,
-        fileSizeLimit: 5242880, // 5MB
-      });
-      
-      if (error) {
-        console.error(`Error creating bucket ${bucketName}:`, error);
-        return false;
-      }
-      
-      console.log(`Bucket ${bucketName} created successfully`);
-      return true;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error(`Error checking/creating bucket ${bucketName}:`, error);
-    return false;
-  }
-};
-
 export async function uploadDefaultImage(file?: File) {
   try {
-    // First, make sure the bucket exists
-    const bucketCreated = await createBucketIfNotExists('production-ad-images');
-    if (!bucketCreated) {
-      throw new Error('Failed to create storage bucket');
-    }
-    
     let blob: Blob;
     let fileName: string;
 
@@ -53,11 +17,9 @@ export async function uploadDefaultImage(file?: File) {
       fileName = '32455e0f-c91f-4dce-ae71-9f815d8df69f.png';
     }
     
-    console.log('Uploading default or provided image:', fileName);
-    
-    // Upload to Supabase storage - using the correct bucket name
+    // Upload to Supabase storage
     const { data, error } = await supabase.storage
-      .from('production-ad-images')
+      .from('ad-images')
       .upload(fileName, blob, {
         cacheControl: '3600',
         upsert: true // Override if exists
@@ -65,6 +27,7 @@ export async function uploadDefaultImage(file?: File) {
 
     if (error) {
       console.error('Supabase storage upload error:', error);
+      toast.error('Failed to upload image');
       throw error;
     }
 
