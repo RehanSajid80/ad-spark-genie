@@ -57,12 +57,16 @@ export function useAdGenerator() {
     setEnhancedImageError(undefined);
     
     try {
-      // Log the image before sending to the function
-      console.log("About to call generateAdSuggestions with image:", 
-                adInput.image ? `${adInput.image.name} (${adInput.image.size} bytes)` : "No image provided");
-      
+      // Verify the image before sending
       if (adInput.image) {
-        console.log("Image file exists:", adInput.image.name, adInput.image.size, adInput.image.type);
+        console.log("Image verification before generateAdSuggestions:", 
+                  adInput.image ? `${adInput.image.name} (${adInput.image.size} bytes)` : "No image provided");
+        
+        if (!(adInput.image instanceof File)) {
+          console.error("Image is not a File object:", adInput.image);
+          // Try to convert or handle the invalid image
+          toast.error("Invalid image format detected");
+        }
       }
       
       // Generate ad suggestions

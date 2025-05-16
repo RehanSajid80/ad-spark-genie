@@ -17,7 +17,7 @@ const fileToBase64 = (file: File): Promise<string> => {
     reader.onload = () => {
       if (reader.result) {
         resolve(reader.result as string);
-        console.log("File successfully converted to base64 in useImageUpload");
+        console.log("File successfully converted to base64 in useImageUpload, length:", (reader.result as string).length);
       } else {
         reject(new Error("Failed to convert file to base64 in useImageUpload - reader.result is null"));
       }
@@ -40,7 +40,7 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
       console.log("Uploading file to Supabase storage:", fileName);
 
       // Create the storage buckets if they don't exist yet
-      const buckets = ['production-ad-images', 'ad-creatives'];
+      const buckets = ['production-ad-images', 'ad-creatives', 'ad-images'];
       
       for (const bucketName of buckets) {
         try {
@@ -72,65 +72,54 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
 
       // Try to upload to the production-ad-images bucket
       let storageData, storageError;
+      let bucketUsed = '';
       
-      try {
-        const uploadResult = await supabase.storage
-          .from('production-ad-images')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-          
-        storageData = uploadResult.data;
-        storageError = uploadResult.error;
-      } catch (primaryUploadError) {
-        console.error("Primary storage upload error:", primaryUploadError);
-        
-        // Try the fallback bucket
+      // Try all buckets until one succeeds
+      for (const bucketName of buckets) {
         try {
-          console.log("Trying fallback bucket 'ad-creatives'");
-          const fallbackResult = await supabase.storage
-            .from('ad-creatives')
+          console.log(`Trying to upload to '${bucketName}'`);
+          const uploadResult = await supabase.storage
+            .from(bucketName)
             .upload(fileName, file, {
               cacheControl: '3600',
               upsert: false
             });
             
-          storageData = fallbackResult.data;
-          storageError = fallbackResult.error;
-        } catch (fallbackError) {
-          console.error("Fallback upload error:", fallbackError);
-          throw fallbackError;
+          storageData = uploadResult.data;
+          storageError = uploadResult.error;
+          
+          if (!storageError) {
+            console.log(`Upload to '${bucketName}' successful`);
+            bucketUsed = bucketName;
+            break;
+          } else {
+            console.error(`Error uploading to '${bucketName}':`, storageError);
+          }
+        } catch (uploadError) {
+          console.error(`Upload error with bucket '${bucketName}':`, uploadError);
         }
       }
 
-      if (storageError) {
-        console.error("Storage upload error:", storageError);
-        throw storageError;
+      if (storageError && !bucketUsed) {
+        console.error("Storage upload error to all buckets:", storageError);
+        throw new Error(`Failed to upload to any storage bucket: ${storageError.message}`);
       }
 
-      console.log("File uploaded successfully:", fileName);
+      console.log("File uploaded successfully to bucket:", bucketUsed);
       setUploadProgress(80);
 
       // Get Supabase public URL from the bucket where it succeeded
       let publicUrl = '';
       
-      if (storageData) {
-        // Check which bucket was used
-        try {
-          const { data } = supabase.storage
-            .from('production-ad-images')
-            .getPublicUrl(fileName);
-          publicUrl = data.publicUrl;
-        } catch {
-          const { data } = supabase.storage
-            .from('ad-creatives')
-            .getPublicUrl(fileName);
-          publicUrl = data.publicUrl;
-        }
+      if (bucketUsed) {
+        const { data } = supabase.storage
+          .from(bucketUsed)
+          .getPublicUrl(fileName);
+        publicUrl = data.publicUrl;
+        console.log("Generated public URL from bucket", bucketUsed, ":", publicUrl);
+      } else {
+        throw new Error("No bucket was used successfully");
       }
-
-      console.log("Generated public URL:", publicUrl);
 
       // Try to write a row into ad_images table
       try {
@@ -145,12 +134,15 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
               size: file.size,
               type: file.type,
               uploaded_at: timestamp,
+              bucket: bucketUsed
             }
           }]);
 
         if (dbInsertError) {
           console.warn("Database insert warning (non-fatal):", dbInsertError);
           // This is non-fatal, we can continue
+        } else {
+          console.log("Successfully inserted record into ad_images table");
         }
       } catch (dbError) {
         console.warn("Database operation warning (non-fatal):", dbError);
@@ -177,7 +169,7 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
       } catch (base64Error) {
         console.error('Error converting to base64:', base64Error);
         toast.error('Error processing image');
-        return;
+        throw base64Error;
       }
 
       const controller = new AbortController();
@@ -202,37 +194,52 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
         uploadedImage: `[Base64 image string - ${base64Image.length} chars]`
       });
 
-      const webhookResponse = await fetch(N8N_WEBHOOK_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify(payload),
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!webhookResponse.ok) {
-        console.warn('Warning: n8n webhook response not OK:', webhookResponse.status);
-        toast.warning('Warning: Image uploaded but n8n workflow notification failed');
-      } else {
-        console.log('Webhook response OK');
-        toast.success('Production image uploaded and n8n workflow triggered');
+      try {
+        const webhookResponse = await fetch(N8N_WEBHOOK_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify(payload),
+        });
+  
+        clearTimeout(timeoutId);
+  
+        if (!webhookResponse.ok) {
+          console.warn('Warning: n8n webhook response not OK:', webhookResponse.status);
+          toast.warning('Warning: Image uploaded but n8n workflow notification failed');
+        } else {
+          console.log('Webhook response OK');
+          toast.success('Production image uploaded and n8n workflow triggered');
+        }
+      } catch (webhookError) {
+        console.error('Error sending to webhook:', webhookError);
+        toast.warning('Warning: Image uploaded but could not notify workflow');
       }
 
       // Try to mark as processed in ad_images
       try {
-        await supabase
+        const { error: updateError } = await supabase
           .from('ad_images')
           .update({ processed: true })
           .eq('public_url', publicUrl);
+          
+        if (updateError) {
+          console.warn("Database update warning (non-fatal):", updateError);
+        } else {
+          console.log("Successfully marked image as processed in database");
+        }
       } catch (dbUpdateError) {
         console.warn("Database update warning (non-fatal):", dbUpdateError);
         // Continue, this is non-fatal
       }
 
+      setUploadProgress(100);
+      return true;
     } catch (error) {
-      console.error('Error sending to webhook:', error);
+      console.error('Error in sendToWebhook:', error);
       toast.warning('Warning: Image uploaded but could not notify or update processing status');
+      setUploadProgress(100); // Still set to 100 since the upload itself succeeded
+      return false;
     }
   };
 

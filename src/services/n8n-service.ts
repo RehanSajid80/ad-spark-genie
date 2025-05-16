@@ -35,10 +35,10 @@ export const generateAdSuggestions = async (
     // Generate mock suggestions first
     const suggestions = generateMockSuggestions(targetAudience, topicArea);
     
-    // Convert image to base64 if it exists
-    let base64Image: string | null = null;
     console.log('Image received in generateAdSuggestions:', image ? `${image.name} (${image.size} bytes)` : 'No image');
     
+    // Convert image to base64 if it exists
+    let base64Image: string | null = null;
     if (image && image instanceof File) {
       try {
         console.log('Converting image to base64...', image.name, image.size);

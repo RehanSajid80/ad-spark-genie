@@ -6,9 +6,10 @@ interface ImagePreviewProps {
   previewUrl: string;
   uploadProgress: number;
   onRemove: () => void;
+  uploadComplete: boolean;
 }
 
-const ImagePreview = ({ previewUrl, uploadProgress, onRemove }: ImagePreviewProps) => {
+const ImagePreview = ({ previewUrl, uploadProgress, onRemove, uploadComplete }: ImagePreviewProps) => {
   return (
     <div className="relative flex flex-col">
       <div className="w-full h-64 relative rounded-md overflow-hidden border border-border">
@@ -36,7 +37,7 @@ const ImagePreview = ({ previewUrl, uploadProgress, onRemove }: ImagePreviewProp
         )}
       </div>
       <p className="text-xs text-muted-foreground mt-2 text-center">
-        {uploadProgress === 100 ? 'Image uploaded successfully' : 'Processing image...'}
+        {uploadComplete ? 'Image uploaded successfully' : 'Processing image...'}
       </p>
     </div>
   );
