@@ -14,7 +14,7 @@ interface InitialViewProps {
   contentLoading: boolean;
   handleInputChange: (field: keyof AdInput, value: string) => void;
   handleImageChange: (file: File | null) => void;
-  generateAds: () => void;
+  generateAds: () => Promise<void>;
   setIsUploading: (isUploading: boolean) => void;
 }
 

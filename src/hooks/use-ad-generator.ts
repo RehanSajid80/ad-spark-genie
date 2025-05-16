@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { AdInput, AdSuggestion, ChatMessage, ChatHistoryItem } from '../types/ad-types';
 import { generateAdSuggestions, sendChatMessage } from '../services/n8n-service';
@@ -37,7 +36,7 @@ export function useAdGenerator() {
     setAdInput(prev => ({ ...prev, [field]: value }));
   };
 
-  const generateAds = async () => {
+  const generateAds = async (): Promise<void> => {
     if (!adInput.context) {
       toast.error('Please provide context for your ad');
       return;
