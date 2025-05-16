@@ -9,6 +9,43 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Function to create bucket if it doesn't exist
+async function createBucketIfNotExists(supabaseClient, bucketName) {
+  try {
+    // Check if bucket exists
+    const { data: buckets, error: listError } = await supabaseClient.storage.listBuckets();
+    
+    if (listError) {
+      console.error('Error listing buckets:', listError);
+      return false;
+    }
+    
+    const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+    
+    if (!bucketExists) {
+      console.log(`Bucket ${bucketName} doesn't exist, creating it...`);
+      const { data, error } = await supabaseClient.storage.createBucket(bucketName, {
+        public: true,
+        fileSizeLimit: 10485760, // 10MB
+      });
+      
+      if (error) {
+        console.error(`Error creating bucket ${bucketName}:`, error);
+        return false;
+      }
+      
+      console.log(`Bucket ${bucketName} created successfully`);
+    } else {
+      console.log(`Bucket ${bucketName} already exists`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error checking/creating bucket ${bucketName}:`, error);
+    return false;
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -71,18 +108,8 @@ serve(async (req) => {
     const uniqueFilename = `${timestamp}-${filename}`;
     console.log('Generated unique filename:', uniqueFilename);
 
-    // Log all available buckets
-    console.log('Listing all storage buckets...');
-    const { data: buckets, error: bucketsError } = await supabaseClient
-      .storage
-      .listBuckets();
-    
-    if (bucketsError) {
-      console.error('Error listing buckets:', bucketsError);
-      throw bucketsError;
-    }
-
-    console.log('Available buckets:', buckets?.map(b => b.name).join(', ') || 'None');
+    // Ensure ad-creatives bucket exists
+    await createBucketIfNotExists(supabaseClient, 'ad-creatives');
 
     // Upload to Supabase Storage
     console.log('Uploading to Supabase Storage bucket ad-creatives...');

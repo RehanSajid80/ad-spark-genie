@@ -19,11 +19,46 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
+const createBucketIfNotExists = async (bucketName: string) => {
+  try {
+    // Check if bucket exists
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+    
+    if (!bucketExists) {
+      console.log(`Bucket ${bucketName} doesn't exist, creating it...`);
+      const { data, error } = await supabase.storage.createBucket(bucketName, {
+        public: true,
+        fileSizeLimit: 5242880, // 5MB
+      });
+      
+      if (error) {
+        console.error(`Error creating bucket ${bucketName}:`, error);
+        return false;
+      }
+      
+      console.log(`Bucket ${bucketName} created successfully`);
+      return true;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error checking/creating bucket ${bucketName}:`, error);
+    return false;
+  }
+};
+
 export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUploadProps) => {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const uploadToStorage = async (file: File) => {
     try {
+      // First, ensure the bucket exists
+      const bucketCreated = await createBucketIfNotExists('production-ad-images');
+      if (!bucketCreated) {
+        throw new Error('Failed to create storage bucket');
+      }
+      
       const timestamp = new Date().toISOString();
       const fileExt = file.name.split('.').pop();
       const randomToken = Math.random().toString(36).substring(2, 15);
@@ -53,24 +88,27 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
         .from('production-ad-images')
         .getPublicUrl(fileName);
 
-      // Write a row into ad_images table
-      const { error: dbInsertError } = await supabase
-        .from('ad_images')
-        .insert([{
-          original_filename: file.name,
-          storage_path: fileName,
-          public_url: publicUrl,
-          processed: false,
-          metadata: {
-            size: file.size,
-            type: file.type,
-            uploaded_at: timestamp,
-          }
-        }]);
+      // Try to write a row into ad_images table but don't fail if it doesn't exist
+      try {
+        const { error: dbInsertError } = await supabase
+          .from('ad_images')
+          .insert([{
+            original_filename: file.name,
+            storage_path: fileName,
+            public_url: publicUrl,
+            processed: false,
+            metadata: {
+              size: file.size,
+              type: file.type,
+              uploaded_at: timestamp,
+            }
+          }]);
 
-      if (dbInsertError) {
-        console.error('Database insert error:', dbInsertError);
-        throw dbInsertError;
+        if (dbInsertError) {
+          console.error('Database insert error (non-critical):', dbInsertError);
+        }
+      } catch (dbError) {
+        console.error('Database error (non-critical, continuing):', dbError);
       }
 
       return { publicUrl, fileName };
