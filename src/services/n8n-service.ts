@@ -4,13 +4,30 @@ import { AdSuggestion, AdCategory, ChatMessage, ChatHistoryItem } from '../types
 const N8N_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/1483ba42-2449-4934-b2c9-4b8dc1ec4a34';
 const N8N_CHAT_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/acd81780-1f22-46ed-a9f3-e035443ad805';
 
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-  });
+const fileToBase64 = async (file: File): Promise<string | null> => {
+  try {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Check if the result is excessively large (>10MB)
+        if (result && result.length > 10 * 1024 * 1024) {
+          console.warn('Image is too large for base64 encoding (>10MB). Using URL only.');
+          resolve(null); // Return null to indicate we should skip base64 encoding
+        } else {
+          resolve(result);
+        }
+      };
+      reader.onerror = error => {
+        console.error('Error reading file for base64 conversion:', error);
+        reject(error);
+      };
+      reader.readAsDataURL(file);
+    });
+  } catch (error) {
+    console.error('Exception during base64 conversion:', error);
+    return null; // Return null on error to allow fallback
+  }
 };
 
 export const generateAdSuggestions = async (
@@ -25,48 +42,88 @@ export const generateAdSuggestions = async (
     // Generate mock suggestions first
     const suggestions = generateMockSuggestions(targetAudience, topicArea);
     
-    // Convert image to base64 if it exists
-    let base64Image = null;
+    // Create the base payload without image data
+    const basePayload = {
+      input: {
+        context,
+        brand_guidelines: brandGuidelines,
+        landing_page_url: landingPageUrl,
+        target_audience: targetAudience,
+        topic_area: topicArea,
+        timestamp: new Date().toISOString(),
+        has_image: !!image
+      },
+      generated_suggestions: suggestions,
+    };
+    
+    // Try to convert image to base64 if it exists, with fallback mechanism
+    let enhancedPayload = { ...basePayload };
     if (image) {
       try {
-        base64Image = await fileToBase64(image);
-        console.log('Image converted to base64 for n8n webhook');
+        console.log('Processing image for n8n webhook, size:', Math.round(image.size/1024), 'KB');
+        
+        // First attempt: Try to send with base64 image data if not too large
+        if (image.size < 5 * 1024 * 1024) { // Less than 5MB
+          const base64Image = await fileToBase64(image);
+          if (base64Image) {
+            console.log('Image successfully converted to base64');
+            enhancedPayload = { 
+              ...basePayload, 
+              uploadedImage: base64Image,
+              metadata: {
+                imageType: image.type,
+                imageSize: image.size,
+                imageFilename: image.name
+              }
+            };
+          }
+        } else {
+          console.log('Image too large for base64 upload, skipping base64 conversion');
+        }
       } catch (imgError) {
-        console.error('Error converting image to base64:', imgError);
+        console.error('Error processing image for webhook:', imgError);
+        // Continue without image data
       }
     }
     
-    // Send both input, generated suggestions and image data to webhook
+    // Send payload to webhook with timeout and retries
     try {
-      console.log('Sending data to n8n webhook with image data:', !!base64Image);
+      console.log('Sending payload to n8n webhook:', N8N_WEBHOOK_ENDPOINT);
       
-      const payload = {
-        input: {
-          context,
-          brand_guidelines: brandGuidelines,
-          landing_page_url: landingPageUrl,
-          target_audience: targetAudience,
-          topic_area: topicArea,
-          timestamp: new Date().toISOString()
-        },
-        generated_suggestions: suggestions,
-        uploadedImage: base64Image
-      };
-      
-      console.log('Sending payload to webhook with image:', !!payload.uploadedImage);
+      // Set up a timeout of 15 seconds
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       
       const response = await fetch(N8N_WEBHOOK_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        signal: controller.signal,
+        body: JSON.stringify(enhancedPayload),
       });
       
-      console.log('Data, suggestions and image sent to n8n successfully');
+      clearTimeout(timeoutId);
       
-      // Process the response if valid
-      if (response.ok) {
+      if (!response.ok) {
+        console.warn(`n8n webhook returned error status: ${response.status}`);
+        console.log('Attempting to resend without image data as fallback...');
+        
+        // Fallback: If the first attempt fails, try again without the image data
+        if (image && enhancedPayload.uploadedImage) {
+          const fallbackPayload = { ...basePayload };
+          
+          await fetch(N8N_WEBHOOK_ENDPOINT, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(fallbackPayload),
+          });
+          
+          console.log('Fallback webhook call completed (without image data)');
+        }
+      } else {
         const data = await response.json();
         console.log('Received response from n8n:', data);
         
@@ -75,7 +132,6 @@ export const generateAdSuggestions = async (
           console.log(`Received ${data.images.length} generated images`);
           
           // Assign image URLs to suggestions based on platform
-          // LinkedIn ads get first image (if available)
           const linkedInSuggestions = suggestions.filter(s => s.platform === 'linkedin');
           const googleSuggestions = suggestions.filter(s => s.platform === 'google');
           
@@ -97,7 +153,11 @@ export const generateAdSuggestions = async (
         }
       }
     } catch (err) {
-      console.log('Non-fatal error sending to n8n:', err);
+      if (err.name === 'AbortError') {
+        console.warn('n8n webhook request timed out after 15 seconds');
+      } else {
+        console.warn('Non-fatal error sending to n8n:', err);
+      }
     }
     
     // Simulating a network delay
@@ -229,13 +289,20 @@ export const sendChatMessage = async (
 
     console.log('Sending chat payload to n8n:', payload);
 
+    // Setup timeout for the webhook call
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     const response = await fetch(N8N_CHAT_WEBHOOK_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: controller.signal,
       body: JSON.stringify(payload),
     });
+
+    clearTimeout(timeoutId);
 
     if (response.ok) {
       const data = await response.json();
@@ -259,6 +326,11 @@ export const sendChatMessage = async (
       return { error: 'Failed to generate new image' };
     }
   } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error('Chat webhook request timed out after 15 seconds');
+      return { error: 'Request timed out. Please try again.' };
+    }
+    
     console.error('Error sending chat message:', error);
     return { error: 'An error occurred while processing your request' };
   }
