@@ -4,17 +4,22 @@ import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Hook to fetch data from the 'content_library' table.
- * NOTE: Uses type workaround until Supabase types are regenerated.
  */
-export const useContentLibrary = () => {
+export const useContentLibrary = (limit?: number) => {
   return useQuery({
-    queryKey: ["content_library"],
+    queryKey: ["content_library", limit],
     queryFn: async () => {
-      // TYPE WORKAROUND: casting to 'any' since Supabase types lack content_library.
-      const { data, error } = await (supabase as any)
+      let query = supabase
         .from("content_library")
         .select("*")
         .order("created_at", { ascending: false });
+      
+      if (limit) {
+        query = query.limit(limit);
+      }
+      
+      const { data, error } = await query;
+      
       if (error) throw error;
       return data;
     },
