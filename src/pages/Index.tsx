@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAdGenerator } from '@/hooks/use-ad-generator';
 import AdForm from '@/components/AdForm';
@@ -48,20 +49,20 @@ const Index = () => {
     });
   }, []);
 
-  // Fetch recent content for the preview section
+  // Fetch content for the content library section
   useEffect(() => {
     async function fetchRecentContent() {
       try {
         setContentLoading(true);
         const { data, error } = await supabase
           .from('content_library')
-          .select('id, title, content_type, created_at, keywords')
+          .select('id, title, content, content_type, created_at, topic_area, keywords')
           .order('created_at', { ascending: false })
-          .limit(4);
+          .limit(8);
 
         if (error) {
           console.error("Error fetching content:", error);
-          toast.error("Failed to load recent content");
+          toast.error("Failed to load content library");
           setContentItems([]);
         } else {
           setContentItems(data || []);
@@ -76,6 +77,22 @@ const Index = () => {
     }
     fetchRecentContent();
   }, []);
+
+  // Handle content selection to update Campaign Context
+  const handleContentSelect = (content: string) => {
+    if (content) {
+      handleInputChange('context', content);
+      toast.success("Content added to Campaign Context");
+      
+      // Scroll to the form if not in suggestion or chat view
+      if (!showSuggestions && !showChat) {
+        const formElement = document.querySelector('.max-w-xl');
+        if (formElement) {
+          formElement.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    }
+  };
 
   // Function to handle image download
   const handleImageDownload = () => {
@@ -125,11 +142,6 @@ const Index = () => {
       <Header />
 
       <main className="container py-6">
-        {/* Show the Content Library above the rest as a demo */}
-        <div className="mb-10">
-          <h2 className="text-2xl font-bold mb-4">Content Library</h2>
-          <ContentLibraryList data={contentItems} isLoading={contentLoading} />
-        </div>
         {showChat ? (
           // Chat/Refinement View
           <div>
@@ -250,6 +262,19 @@ const Index = () => {
             </div>
             
             <CategoryFeatures />
+            
+            {/* Content Library section moved below Category Features */}
+            <div className="mb-10">
+              <h2 className="text-2xl font-bold mb-4">Content Library</h2>
+              <p className="text-muted-foreground mb-6">
+                Click on any content row to use it as your Campaign Context.
+              </p>
+              <ContentLibraryList 
+                data={contentItems} 
+                isLoading={contentLoading} 
+                onContentSelect={handleContentSelect}
+              />
+            </div>
           </div>
         )}
       </main>
