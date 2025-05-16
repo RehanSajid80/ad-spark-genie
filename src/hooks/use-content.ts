@@ -3,18 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { contentSupabase } from "@/integrations/supabase/content-client";
 
 /**
- * Hook to fetch data from the 'content_library' table.
- * NOTE: Uses type workaround until Supabase types are regenerated.
+ * Hook to fetch content data from the secondary Supabase instance
  */
-export const useContentLibrary = () => {
+export const useContent = () => {
   return useQuery({
-    queryKey: ["content_library"],
+    queryKey: ["content"],
     queryFn: async () => {
-      // TYPE WORKAROUND: casting to 'any' since Supabase types lack content_library.
+      // TYPE WORKAROUND: casting to 'any' since Supabase types may lack content table.
       const { data, error } = await (contentSupabase as any)
-        .from("content_library")
+        .from("content")
         .select("*")
         .order("created_at", { ascending: false });
+        
       if (error) throw error;
       return data;
     },

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { contentSupabase } from "@/integrations/supabase/content-client";
 
 function ContentLibraryPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -9,7 +9,7 @@ function ContentLibraryPage() {
   useEffect(() => {
     async function fetchContent() {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await contentSupabase
         .from("content_library")
         .select("*")
         .order("created_at", { ascending: false });

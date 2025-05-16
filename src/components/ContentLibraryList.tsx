@@ -1,6 +1,7 @@
 
 import React from "react";
-import { useContentLibrary } from "@/hooks/use-content-library";
+import { useQuery } from "@tanstack/react-query";
+import { contentSupabase } from "@/integrations/supabase/content-client";
 import {
   Table,
   TableHeader,
@@ -12,7 +13,17 @@ import {
 import { Loader2 } from "lucide-react";
 
 const ContentLibraryList = () => {
-  const { data, isLoading, error } = useContentLibrary();
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["content_library"],
+    queryFn: async () => {
+      const { data, error } = await contentSupabase
+        .from("content_library")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
 
   if (isLoading) {
     return (
