@@ -63,7 +63,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         await sendToWebhook(publicUrl, fileName, file, timestamp);
         
         setUploadProgress(100);
+        // Important: Make sure we're passing a valid File object to onImageChange
         onImageChange(file);
+        console.log("Image uploaded successfully and passed to parent component");
         
       } catch (err) {
         console.error("Unexpected error during upload:", err);
@@ -110,6 +112,17 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       handleFileChange(syntheticEvent);
     }
   };
+
+  // If we have a currentImage but no preview, set it
+  React.useEffect(() => {
+    if (currentImage && !preview) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(currentImage);
+    }
+  }, [currentImage, preview]);
 
   return (
     <div className="w-full">

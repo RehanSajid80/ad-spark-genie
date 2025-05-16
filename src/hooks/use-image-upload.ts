@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -29,6 +30,22 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
       const fileName = `${timestamp}-${randomToken}.${fileExt}`;
 
       setUploadProgress(50);
+      console.log("Uploading file to Supabase storage:", fileName);
+
+      // Create a storage bucket if it doesn't exist yet
+      try {
+        const { data: buckets } = await supabase.storage.listBuckets();
+        if (!buckets?.some(bucket => bucket.name === 'production-ad-images')) {
+          console.log("Bucket 'production-ad-images' doesn't exist, attempting to create");
+          await supabase.storage.createBucket('production-ad-images', {
+            public: true
+          });
+          console.log("Created bucket 'production-ad-images'");
+        }
+      } catch (bucketError) {
+        console.warn("Could not check or create bucket:", bucketError);
+        // Continue anyway, the bucket might already exist
+      }
 
       // Upload to the dedicated production bucket
       const { data: storageData, error: storageError } = await supabase.storage
@@ -39,9 +56,11 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
         });
 
       if (storageError) {
+        console.error("Storage upload error:", storageError);
         throw storageError;
       }
 
+      console.log("File uploaded successfully:", fileName);
       setUploadProgress(80);
 
       // Get Supabase public URL
@@ -49,23 +68,31 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
         .from('production-ad-images')
         .getPublicUrl(fileName);
 
-      // Write a row into ad_images table
-      const { error: dbInsertError } = await supabase
-        .from('ad_images')
-        .insert([{
-          original_filename: file.name,
-          storage_path: fileName,
-          public_url: publicUrl,
-          processed: false,
-          metadata: {
-            size: file.size,
-            type: file.type,
-            uploaded_at: timestamp,
-          }
-        }]);
+      console.log("Generated public URL:", publicUrl);
 
-      if (dbInsertError) {
-        throw dbInsertError;
+      // Try to write a row into ad_images table
+      try {
+        const { error: dbInsertError } = await supabase
+          .from('ad_images')
+          .insert([{
+            original_filename: file.name,
+            storage_path: fileName,
+            public_url: publicUrl,
+            processed: false,
+            metadata: {
+              size: file.size,
+              type: file.type,
+              uploaded_at: timestamp,
+            }
+          }]);
+
+        if (dbInsertError) {
+          console.warn("Database insert warning (non-fatal):", dbInsertError);
+          // This is non-fatal, we can continue
+        }
+      } catch (dbError) {
+        console.warn("Database operation warning (non-fatal):", dbError);
+        // Continue, this is non-fatal
       }
 
       return { publicUrl, fileName };
@@ -81,7 +108,7 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
 
       // Convert file to base64
       const base64Image = await fileToBase64(file);
-      console.log('Image converted to base64');
+      console.log('Image converted to base64 for webhook, length:', base64Image.length);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -100,6 +127,11 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
         }
       };
 
+      console.log('Sending webhook payload:', {
+        ...payload, 
+        uploadedImage: `[Base64 image string - ${base64Image.length} chars]`
+      });
+
       const webhookResponse = await fetch(N8N_WEBHOOK_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -110,18 +142,26 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
       clearTimeout(timeoutId);
 
       if (!webhookResponse.ok) {
+        console.warn('Warning: n8n webhook response not OK:', webhookResponse.status);
         toast.warning('Warning: Image uploaded but n8n workflow notification failed');
       } else {
+        console.log('Webhook response OK');
         toast.success('Production image uploaded and n8n workflow triggered');
       }
 
-      // Mark as processed in ad_images
-      await supabase
-        .from('ad_images')
-        .update({ processed: true })
-        .eq('public_url', publicUrl);
+      // Try to mark as processed in ad_images
+      try {
+        await supabase
+          .from('ad_images')
+          .update({ processed: true })
+          .eq('public_url', publicUrl);
+      } catch (dbUpdateError) {
+        console.warn("Database update warning (non-fatal):", dbUpdateError);
+        // Continue, this is non-fatal
+      }
 
     } catch (error) {
+      console.error('Error sending to webhook:', error);
       toast.warning('Warning: Image uploaded but could not notify or update processing status');
     }
   };
