@@ -1,5 +1,4 @@
 
-// Main export file for n8n services
 import { AdSuggestion, AdCategory, ChatMessage, ChatHistoryItem } from '../types/ad-types';
 
 const N8N_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/1483ba42-2449-4934-b2c9-4b8dc1ec4a34';
@@ -23,35 +22,50 @@ export const generateAdSuggestions = async (
   topicArea: string
 ): Promise<AdSuggestion[]> => {
   try {
+    // Log the image parameter to debug
+    console.log('generateAdSuggestions received image:', image);
+    
     // Generate mock suggestions first
     const suggestions = generateMockSuggestions(targetAudience, topicArea);
     
     // Convert image to base64 if it exists
     let base64Image = null;
     if (image) {
-      base64Image = await fileToBase64(image);
-      console.log('Image converted to base64 for n8n webhook');
+      try {
+        base64Image = await fileToBase64(image);
+        console.log('Image converted to base64 for n8n webhook');
+      } catch (err) {
+        console.error('Error converting image to base64:', err);
+      }
     }
     
     // Send both input, generated suggestions and image data to webhook
     try {
+      const payload = {
+        input: {
+          context,
+          brand_guidelines: brandGuidelines,
+          landing_page_url: landingPageUrl,
+          target_audience: targetAudience,
+          topic_area: topicArea,
+          timestamp: new Date().toISOString(),
+          has_image: image !== null
+        },
+        generated_suggestions: suggestions,
+        uploadedImage: base64Image
+      };
+      
+      console.log('Sending payload to n8n:', { 
+        ...payload, 
+        uploadedImage: base64Image ? 'Base64 image data (truncated)' : null 
+      });
+      
       const response = await fetch(N8N_WEBHOOK_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          input: {
-            context,
-            brand_guidelines: brandGuidelines,
-            landing_page_url: landingPageUrl,
-            target_audience: targetAudience,
-            topic_area: topicArea,
-            timestamp: new Date().toISOString()
-          },
-          generated_suggestions: suggestions,
-          uploadedImage: base64Image
-        }),
+        body: JSON.stringify(payload),
       });
       
       console.log('Data, suggestions and image sent to n8n successfully');

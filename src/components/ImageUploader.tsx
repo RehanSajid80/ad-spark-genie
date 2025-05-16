@@ -69,6 +69,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       await sendToWebhook(publicUrl, fileName, file, timestamp);
         
       setUploadProgress(100);
+      console.log("Calling onImageChange with file:", file.name);
       // Make sure we're passing the file object to onImageChange
       onImageChange(file);
         
@@ -127,9 +128,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         className="hidden"
       />
       
-      {preview ? (
+      {preview || currentImage ? (
         <ImagePreview
-          previewUrl={preview}
+          previewUrl={preview || (currentImage ? URL.createObjectURL(currentImage) : null)}
           uploadProgress={uploadProgress}
           onRemove={handleRemoveImage}
         />
