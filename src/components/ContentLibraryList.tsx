@@ -1,6 +1,5 @@
 
 import React from "react";
-import { useContentLibrary } from "@/hooks/use-content-library";
 import {
   Table,
   TableHeader,
@@ -11,9 +10,13 @@ import {
 } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
 
-const ContentLibraryList = () => {
-  const { data, isLoading, error } = useContentLibrary();
+interface ContentLibraryListProps {
+  data: any[];
+  isLoading: boolean;
+  error?: Error | null;
+}
 
+const ContentLibraryList = ({ data, isLoading, error }: ContentLibraryListProps) => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -22,6 +25,7 @@ const ContentLibraryList = () => {
       </div>
     );
   }
+  
   if (error) {
     return (
       <div className="text-red-600 text-center py-6">
@@ -29,6 +33,7 @@ const ContentLibraryList = () => {
       </div>
     );
   }
+  
   if (!data || data.length === 0) {
     return <div className="text-center py-6">No content found.</div>;
   }
@@ -43,11 +48,10 @@ const ContentLibraryList = () => {
             <TableHead>Topic Area</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Created</TableHead>
-            {/* Add more columns if desired */}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((item: any) => (
+          {data.map((item) => (
             <TableRow key={item.id}>
               <TableCell>{item.title}</TableCell>
               <TableCell className="max-w-xs truncate">{item.content}</TableCell>
@@ -58,7 +62,6 @@ const ContentLibraryList = () => {
                   ? new Date(item.created_at).toLocaleDateString()
                   : ""}
               </TableCell>
-              {/* More columns can be rendered here as needed */}
             </TableRow>
           ))}
         </TableBody>

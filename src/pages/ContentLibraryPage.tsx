@@ -1,44 +1,54 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { ContentLibraryList } from "@/components/ContentLibraryList";
 
 function ContentLibraryPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     async function fetchContent() {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("content_library")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) {
-        console.error("Error fetching content_library:", error.message);
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('content_library')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error("Error fetching content:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load content library",
+            variant: "destructive",
+          });
+          setItems([]);
+        } else {
+          setItems(data || []);
+        }
+      } catch (err) {
+        console.error("Unexpected error:", err);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred",
+          variant: "destructive",
+        });
         setItems([]);
-      } else {
-        setItems(data || []);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     fetchContent();
-  }, []);
+  }, [toast]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="flex justify-center items-center py-12">Loading content library...</div>;
   }
-  if (items.length === 0) {
-    return <div>No content found.</div>;
-  }
-  return (
-    <ul>
-      {items.map((item) => (
-        <li key={item.id}>
-          <strong>{item.title}</strong>: {item.content}
-        </li>
-      ))}
-    </ul>
-  );
+
+  return <ContentLibraryList data={items} isLoading={loading} />;
 }
 
 export default ContentLibraryPage;
