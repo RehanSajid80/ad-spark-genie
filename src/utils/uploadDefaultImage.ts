@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -17,9 +18,11 @@ export async function uploadDefaultImage(file?: File) {
       fileName = '32455e0f-c91f-4dce-ae71-9f815d8df69f.png';
     }
     
-    // Upload to Supabase storage
+    console.log('Uploading default or provided image:', fileName);
+    
+    // Upload to Supabase storage - using the correct bucket name
     const { data, error } = await supabase.storage
-      .from('ad-images')
+      .from('production-ad-images')
       .upload(fileName, blob, {
         cacheControl: '3600',
         upsert: true // Override if exists

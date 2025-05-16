@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -28,6 +29,7 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
       const randomToken = Math.random().toString(36).substring(2, 15);
       const fileName = `${timestamp}-${randomToken}.${fileExt}`;
 
+      console.log('Uploading file to production-ad-images bucket:', fileName);
       setUploadProgress(50);
 
       // Upload to the dedicated production bucket
@@ -39,9 +41,11 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
         });
 
       if (storageError) {
+        console.error('Storage upload error:', storageError);
         throw storageError;
       }
 
+      console.log('File uploaded successfully:', fileName);
       setUploadProgress(80);
 
       // Get Supabase public URL
@@ -65,6 +69,7 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
         }]);
 
       if (dbInsertError) {
+        console.error('Database insert error:', dbInsertError);
         throw dbInsertError;
       }
 
@@ -82,7 +87,7 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
       // Convert file to base64
       const base64Image = await fileToBase64(file);
       console.log('Image converted to base64');
-
+      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -110,8 +115,10 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
       clearTimeout(timeoutId);
 
       if (!webhookResponse.ok) {
+        console.error('Error response from n8n webhook:', await webhookResponse.text());
         toast.warning('Warning: Image uploaded but n8n workflow notification failed');
       } else {
+        console.log('Successfully sent image data to n8n webhook');
         toast.success('Production image uploaded and n8n workflow triggered');
       }
 
@@ -122,6 +129,7 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
         .eq('public_url', publicUrl);
 
     } catch (error) {
+      console.error('Error sending to webhook:', error);
       toast.warning('Warning: Image uploaded but could not notify or update processing status');
     }
   };
