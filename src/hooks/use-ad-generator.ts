@@ -61,6 +61,10 @@ export function useAdGenerator() {
       console.log("About to call generateAdSuggestions with image:", 
                 adInput.image ? `${adInput.image.name} (${adInput.image.size} bytes)` : "No image provided");
       
+      if (adInput.image) {
+        console.log("Image file exists:", adInput.image.name, adInput.image.size, adInput.image.type);
+      }
+      
       // Generate ad suggestions
       const results = await generateAdSuggestions(
         adInput.image,

@@ -63,7 +63,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         await sendToWebhook(publicUrl, fileName, file, timestamp);
         
         setUploadProgress(100);
+        
         // Important: Make sure we're passing a valid File object to onImageChange
+        // This ensures the image gets passed properly to the parent component
         onImageChange(file);
         console.log("Image uploaded successfully and passed to parent component");
         

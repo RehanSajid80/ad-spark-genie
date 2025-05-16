@@ -14,7 +14,14 @@ const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = () => {
+      if (reader.result) {
+        resolve(reader.result as string);
+        console.log("File successfully converted to base64 in useImageUpload");
+      } else {
+        reject(new Error("Failed to convert file to base64 in useImageUpload - reader.result is null"));
+      }
+    };
     reader.onerror = error => reject(error);
   });
 };
@@ -32,28 +39,70 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
       setUploadProgress(50);
       console.log("Uploading file to Supabase storage:", fileName);
 
-      // Create a storage bucket if it doesn't exist yet
-      try {
-        const { data: buckets } = await supabase.storage.listBuckets();
-        if (!buckets?.some(bucket => bucket.name === 'production-ad-images')) {
-          console.log("Bucket 'production-ad-images' doesn't exist, attempting to create");
-          await supabase.storage.createBucket('production-ad-images', {
-            public: true
-          });
-          console.log("Created bucket 'production-ad-images'");
+      // Create the storage buckets if they don't exist yet
+      const buckets = ['production-ad-images', 'ad-creatives'];
+      
+      for (const bucketName of buckets) {
+        try {
+          console.log(`Checking if bucket '${bucketName}' exists...`);
+          const { data: existingBuckets } = await supabase.storage.listBuckets();
+          
+          const bucketExists = existingBuckets?.some(b => b.name === bucketName);
+          if (!bucketExists) {
+            console.log(`Bucket '${bucketName}' doesn't exist, attempting to create`);
+            
+            const { data: createdBucket, error: createError } = await supabase.storage.createBucket(bucketName, {
+              public: true
+            });
+            
+            if (createError) {
+              console.error(`Error creating bucket '${bucketName}':`, createError);
+              toast.warning(`Warning: Could not create storage bucket '${bucketName}'`);
+            } else {
+              console.log(`Created bucket '${bucketName}'`, createdBucket);
+            }
+          } else {
+            console.log(`Bucket '${bucketName}' exists`);
+          }
+        } catch (bucketError) {
+          console.warn(`Could not check or create bucket '${bucketName}':`, bucketError);
+          // Continue anyway, the bucket might already exist
         }
-      } catch (bucketError) {
-        console.warn("Could not check or create bucket:", bucketError);
-        // Continue anyway, the bucket might already exist
       }
 
-      // Upload to the dedicated production bucket
-      const { data: storageData, error: storageError } = await supabase.storage
-        .from('production-ad-images')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      // Try to upload to the production-ad-images bucket
+      let storageData, storageError;
+      
+      try {
+        const uploadResult = await supabase.storage
+          .from('production-ad-images')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+          
+        storageData = uploadResult.data;
+        storageError = uploadResult.error;
+      } catch (primaryUploadError) {
+        console.error("Primary storage upload error:", primaryUploadError);
+        
+        // Try the fallback bucket
+        try {
+          console.log("Trying fallback bucket 'ad-creatives'");
+          const fallbackResult = await supabase.storage
+            .from('ad-creatives')
+            .upload(fileName, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
+            
+          storageData = fallbackResult.data;
+          storageError = fallbackResult.error;
+        } catch (fallbackError) {
+          console.error("Fallback upload error:", fallbackError);
+          throw fallbackError;
+        }
+      }
 
       if (storageError) {
         console.error("Storage upload error:", storageError);
@@ -63,10 +112,23 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
       console.log("File uploaded successfully:", fileName);
       setUploadProgress(80);
 
-      // Get Supabase public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('production-ad-images')
-        .getPublicUrl(fileName);
+      // Get Supabase public URL from the bucket where it succeeded
+      let publicUrl = '';
+      
+      if (storageData) {
+        // Check which bucket was used
+        try {
+          const { data } = supabase.storage
+            .from('production-ad-images')
+            .getPublicUrl(fileName);
+          publicUrl = data.publicUrl;
+        } catch {
+          const { data } = supabase.storage
+            .from('ad-creatives')
+            .getPublicUrl(fileName);
+          publicUrl = data.publicUrl;
+        }
+      }
 
       console.log("Generated public URL:", publicUrl);
 
@@ -98,6 +160,7 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
       return { publicUrl, fileName };
     } catch (error) {
       console.error("Storage upload error:", error);
+      toast.error("Failed to upload image. Please try again.");
       throw error;
     }
   };
@@ -107,8 +170,15 @@ export const useImageUpload = ({ onImageChange, setIsUploading }: UseImageUpload
       setUploadProgress(90);
 
       // Convert file to base64
-      const base64Image = await fileToBase64(file);
-      console.log('Image converted to base64 for webhook, length:', base64Image.length);
+      let base64Image;
+      try {
+        base64Image = await fileToBase64(file);
+        console.log('Image converted to base64 for webhook, length:', base64Image.length);
+      } catch (base64Error) {
+        console.error('Error converting to base64:', base64Error);
+        toast.error('Error processing image');
+        return;
+      }
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);

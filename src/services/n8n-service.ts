@@ -1,5 +1,5 @@
-
 import { AdSuggestion, AdCategory, ChatMessage, ChatHistoryItem } from '../types/ad-types';
+import { toast } from 'sonner';
 
 const N8N_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/1483ba42-2449-4934-b2c9-4b8dc1ec4a34';
 const N8N_CHAT_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/acd81780-1f22-46ed-a9f3-e035443ad805';
@@ -8,8 +8,18 @@ const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
+    reader.onload = () => {
+      if (reader.result) {
+        resolve(reader.result as string);
+        console.log("File successfully converted to base64");
+      } else {
+        reject(new Error("Failed to convert file to base64 - reader.result is null"));
+      }
+    };
+    reader.onerror = (error) => {
+      console.error("Error in fileToBase64:", error);
+      reject(error);
+    };
   });
 };
 
@@ -31,12 +41,15 @@ export const generateAdSuggestions = async (
     
     if (image && image instanceof File) {
       try {
-        console.log('Converting image to base64...');
+        console.log('Converting image to base64...', image.name, image.size);
         base64Image = await fileToBase64(image);
         console.log('Image converted to base64 successfully, length:', base64Image.length);
       } catch (err) {
         console.error('Error converting image to base64:', err);
+        toast.error('Error processing image');
       }
+    } else {
+      console.log('No image provided or image is not a File object');
     }
     
     // Send both input, generated suggestions and image data to webhook
@@ -56,6 +69,8 @@ export const generateAdSuggestions = async (
       
       console.log('Sending payload to n8n:', {
         ...payload,
+        input: payload.input,
+        generated_suggestions_count: suggestions.length,
         uploadedImage: base64Image ? `[Base64 image string - ${base64Image.length} chars]` : null
       });
       
