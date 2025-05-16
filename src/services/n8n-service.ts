@@ -1,7 +1,33 @@
+
 import { AdSuggestion, AdCategory, ChatMessage, ChatHistoryItem } from '../types/ad-types';
 
 const N8N_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/1483ba42-2449-4934-b2c9-4b8dc1ec4a34';
 const N8N_CHAT_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/acd81780-1f22-46ed-a9f3-e035443ad805';
+
+// Define interfaces for the payload to ensure type safety
+interface WebhookPayloadInput {
+  context: string;
+  brand_guidelines: string;
+  landing_page_url: string;
+  target_audience: string;
+  topic_area: string;
+  timestamp: string;
+  has_image: boolean;
+}
+
+interface BaseWebhookPayload {
+  input: WebhookPayloadInput;
+  generated_suggestions: AdSuggestion[];
+}
+
+interface EnhancedWebhookPayload extends BaseWebhookPayload {
+  image_data?: string;
+  metadata?: {
+    imageType: string;
+    imageSize: number;
+    imageFilename: string;
+  };
+}
 
 const fileToBase64 = async (file: File): Promise<string | null> => {
   try {
@@ -42,7 +68,7 @@ export const generateAdSuggestions = async (
     const suggestions = generateMockSuggestions(targetAudience, topicArea);
     
     // Create the base payload without image data
-    const basePayload = {
+    const basePayload: BaseWebhookPayload = {
       input: {
         context,
         brand_guidelines: brandGuidelines,
@@ -56,7 +82,7 @@ export const generateAdSuggestions = async (
     };
     
     // Try to convert image to base64 if it exists, with fallback mechanism
-    let enhancedPayload = { ...basePayload };
+    let enhancedPayload: EnhancedWebhookPayload = { ...basePayload };
     if (image) {
       try {
         console.log('Processing image for n8n webhook, size:', Math.round(image.size/1024), 'KB');
@@ -110,7 +136,7 @@ export const generateAdSuggestions = async (
         
         // Fallback: If the first attempt fails, try again without the image data
         if (image && enhancedPayload.image_data) {
-          const fallbackPayload = { ...basePayload };
+          const fallbackPayload: BaseWebhookPayload = { ...basePayload };
           
           await fetch(N8N_WEBHOOK_ENDPOINT, {
             method: 'POST',
