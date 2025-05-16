@@ -2,6 +2,7 @@
 import { useAdForm } from './use-ad-form';
 import { useSuggestions } from './use-suggestions';
 import { useChat } from './use-chat';
+import { AdSuggestion } from '../types/ad-types';
 
 export function useAdGenerator() {
   // Get functionality from specialized hooks
