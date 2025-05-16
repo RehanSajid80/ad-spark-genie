@@ -1,4 +1,3 @@
-
 import { AdSuggestion, AdCategory, ChatMessage, ChatHistoryItem } from '../types/ad-types';
 
 const N8N_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/1483ba42-2449-4934-b2c9-4b8dc1ec4a34';
@@ -69,7 +68,7 @@ export const generateAdSuggestions = async (
             console.log('Image successfully converted to base64');
             enhancedPayload = { 
               ...basePayload, 
-              uploadedImage: base64Image,
+              image_data: base64Image,
               metadata: {
                 imageType: image.type,
                 imageSize: image.size,
@@ -110,7 +109,7 @@ export const generateAdSuggestions = async (
         console.log('Attempting to resend without image data as fallback...');
         
         // Fallback: If the first attempt fails, try again without the image data
-        if (image && enhancedPayload.uploadedImage) {
+        if (image && enhancedPayload.image_data) {
           const fallbackPayload = { ...basePayload };
           
           await fetch(N8N_WEBHOOK_ENDPOINT, {
