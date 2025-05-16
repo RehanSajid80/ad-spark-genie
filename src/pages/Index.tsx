@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAdGenerator } from '@/hooks/use-ad-generator';
 import AdForm from '@/components/AdForm';
 import AdSuggestionList from '@/components/AdSuggestionList';
@@ -11,6 +11,7 @@ import { ArrowLeft, RefreshCw, Download } from 'lucide-react';
 import { uploadDefaultImage } from '@/utils/uploadDefaultImage';
 import { toast } from 'sonner';
 import ContentLibraryList from "@/components/ContentLibraryList";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const {
@@ -35,12 +36,45 @@ const Index = () => {
   // Track whether we're in chat/refinement view
   const showChat = selectedSuggestion !== null;
 
+  // Add state for content library data
+  const [contentItems, setContentItems] = useState<any[]>([]);
+  const [contentLoading, setContentLoading] = useState(true);
+
   useEffect(() => {
     // Upload the default image when the component mounts
     uploadDefaultImage().catch(error => {
       console.error('Failed to upload default image:', error);
       toast.error('Failed to upload default image');
     });
+  }, []);
+
+  // Fetch recent content for the preview section
+  useEffect(() => {
+    async function fetchRecentContent() {
+      try {
+        setContentLoading(true);
+        const { data, error } = await supabase
+          .from('content_library')
+          .select('id, title, content_type, created_at, keywords')
+          .order('created_at', { ascending: false })
+          .limit(4);
+
+        if (error) {
+          console.error("Error fetching content:", error);
+          toast.error("Failed to load recent content");
+          setContentItems([]);
+        } else {
+          setContentItems(data || []);
+        }
+      } catch (err) {
+        console.error("Unexpected error:", err);
+        toast.error("An unexpected error occurred");
+        setContentItems([]);
+      } finally {
+        setContentLoading(false);
+      }
+    }
+    fetchRecentContent();
   }, []);
 
   // Function to handle image download
@@ -94,7 +128,7 @@ const Index = () => {
         {/* Show the Content Library above the rest as a demo */}
         <div className="mb-10">
           <h2 className="text-2xl font-bold mb-4">Content Library</h2>
-          <ContentLibraryList />
+          <ContentLibraryList data={contentItems} isLoading={contentLoading} />
         </div>
         {showChat ? (
           // Chat/Refinement View
