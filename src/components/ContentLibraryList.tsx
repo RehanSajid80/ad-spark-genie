@@ -1,7 +1,5 @@
 
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { contentSupabase } from "@/integrations/supabase/content-client";
 import {
   Table,
   TableHeader,
@@ -11,6 +9,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 interface ContentLibraryListProps {
   data?: any[];
@@ -25,28 +24,7 @@ const ContentLibraryList = ({
   error, 
   onContentSelect 
 }: ContentLibraryListProps) => {
-  // If no data is provided via props, fetch it using the hook
-  const queryResult = useQuery({
-    queryKey: ["content_library"],
-    queryFn: async () => {
-      // TYPE WORKAROUND: casting to 'any' since Supabase types may lack content_library.
-      const { data, error } = await contentSupabase
-        .from("content_library")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    // Skip query if data is provided via props
-    enabled: !data,
-  });
-
-  // Use props or query result as appropriate
-  const contentData = data || queryResult.data;
-  const contentLoading = isLoading !== undefined ? isLoading : queryResult.isLoading;
-  const contentError = error || queryResult.error;
-
-  if (contentLoading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
         <Loader2 className="h-6 w-6 animate-spin" />
@@ -54,56 +32,60 @@ const ContentLibraryList = ({
       </div>
     );
   }
-  if (contentError) {
+  
+  if (error) {
     return (
       <div className="text-red-600 text-center py-6">
-        Error loading content: {contentError.message}
+        Error loading content: {error.message}
       </div>
     );
   }
-  if (!contentData || contentData.length === 0) {
+  
+  if (!data || data.length === 0) {
     return <div className="text-center py-6">No content found.</div>;
   }
 
-  const handleRowClick = (item: any) => {
-    if (onContentSelect && item.content) {
-      onContentSelect(item.content);
+  const handleRowClick = (content: string) => {
+    if (onContentSelect && content) {
+      onContentSelect(content);
     }
   };
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Content</TableHead>
-            <TableHead>Topic Area</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Created</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {contentData.map((item: any) => (
-            <TableRow 
-              key={item.id} 
-              onClick={() => handleRowClick(item)}
-              className={onContentSelect ? "cursor-pointer hover:bg-muted/50" : ""}
-            >
-              <TableCell>{item.title}</TableCell>
-              <TableCell className="max-w-xs truncate">{item.content}</TableCell>
-              <TableCell>{item.topic_area}</TableCell>
-              <TableCell>{item.content_type}</TableCell>
-              <TableCell>
-                {item.created_at
-                  ? new Date(item.created_at).toLocaleDateString()
-                  : ""}
-              </TableCell>
+    <Card className="overflow-hidden border border-purple-200 shadow-sm">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader className="bg-purple-50">
+            <TableRow>
+              <TableHead className="font-semibold">Title</TableHead>
+              <TableHead className="font-semibold">Content</TableHead>
+              <TableHead className="font-semibold">Topic Area</TableHead>
+              <TableHead className="font-semibold">Type</TableHead>
+              <TableHead className="font-semibold">Created</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {data.map((item) => (
+              <TableRow 
+                key={item.id}
+                onClick={() => handleRowClick(item.content)}
+                className={onContentSelect ? "cursor-pointer hover:bg-purple-50" : ""}
+              >
+                <TableCell className="font-medium">{item.title}</TableCell>
+                <TableCell className="max-w-xs truncate">{item.content}</TableCell>
+                <TableCell>{item.topic_area}</TableCell>
+                <TableCell>{item.content_type}</TableCell>
+                <TableCell>
+                  {item.created_at
+                    ? new Date(item.created_at).toLocaleDateString()
+                    : ""}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </Card>
   );
 };
 
