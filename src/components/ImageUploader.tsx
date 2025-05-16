@@ -19,7 +19,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [uploadComplete, setUploadComplete] = useState<boolean>(false);
   
   const { uploadProgress, setUploadProgress, uploadToStorage, sendToWebhook } = useImageUpload({
     onImageChange,
@@ -38,7 +37,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       
       setIsUploading(true);
       setUploadProgress(10);
-      setUploadComplete(false);
       
       try {
         // Create a preview
@@ -55,7 +53,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           toast.error('Error loading image');
           setIsUploading(false);
           setUploadProgress(0);
-          setUploadComplete(false);
         };
         
         reader.readAsDataURL(file);
@@ -66,19 +63,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         await sendToWebhook(publicUrl, fileName, file, timestamp);
         
         setUploadProgress(100);
-        setUploadComplete(true);
-        
-        // Important: Make sure we're passing a valid File object to onImageChange
-        // This ensures the image gets passed properly to the parent component
         onImageChange(file);
-        console.log("Image uploaded successfully and passed to parent component", file);
         
       } catch (err) {
         console.error("Unexpected error during upload:", err);
         toast.error(`Unexpected error: ${err.message || 'Unknown error'}`);
         setIsUploading(false);
         setUploadProgress(0);
-        setUploadComplete(false);
       } finally {
         setIsUploading(false);
       }
@@ -91,7 +82,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   const handleRemoveImage = () => {
     setPreview(null);
-    setUploadComplete(false);
     onImageChange(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -121,18 +111,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     }
   };
 
-  // If we have a currentImage but no preview, set it
-  React.useEffect(() => {
-    if (currentImage && !preview) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(currentImage);
-      setUploadComplete(true);
-    }
-  }, [currentImage, preview]);
-
   return (
     <div className="w-full">
       <input
@@ -148,7 +126,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           previewUrl={preview}
           uploadProgress={uploadProgress}
           onRemove={handleRemoveImage}
-          uploadComplete={uploadComplete}
         />
       ) : (
         <DragDropZone

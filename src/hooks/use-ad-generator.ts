@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AdInput, AdSuggestion, ChatMessage, ChatHistoryItem } from '../types/ad-types';
 import { generateAdSuggestions, sendChatMessage } from '../services/n8n-service';
 import { enhanceOfficeImage } from '../services/enhance-image-service';
@@ -27,7 +27,6 @@ export function useAdGenerator() {
   const [isProcessingChat, setIsProcessingChat] = useState(false);
 
   const handleImageChange = (file: File | null) => {
-    console.log("handleImageChange called with file:", file ? `${file.name} (${file.size} bytes)` : "null");
     setAdInput(prev => ({ ...prev, image: file }));
     // Clear enhanced image when original image changes
     setEnhancedImage(null);
@@ -57,18 +56,6 @@ export function useAdGenerator() {
     setEnhancedImageError(undefined);
     
     try {
-      // Verify the image before sending
-      if (adInput.image) {
-        console.log("Image verification before generateAdSuggestions:", 
-                  adInput.image ? `${adInput.image.name} (${adInput.image.size} bytes)` : "No image provided");
-        
-        if (!(adInput.image instanceof File)) {
-          console.error("Image is not a File object:", adInput.image);
-          // Try to convert or handle the invalid image
-          toast.error("Invalid image format detected");
-        }
-      }
-      
       // Generate ad suggestions
       const results = await generateAdSuggestions(
         adInput.image,
@@ -86,7 +73,6 @@ export function useAdGenerator() {
         try {
           setIsEnhancingImage(true);
           const imageUrl = URL.createObjectURL(adInput.image);
-          console.log("Created object URL for image enhancement:", imageUrl);
           
           const enhancedResult = await enhanceOfficeImage(
             imageUrl,

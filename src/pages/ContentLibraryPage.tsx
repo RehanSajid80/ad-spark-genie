@@ -1,24 +1,43 @@
 
-import React from "react";
-import { useContentLibrary } from "@/hooks/use-content-library";
-import ContentLibraryList from "@/components/ContentLibraryList";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 function ContentLibraryPage() {
-  const { data, isLoading, error } = useContentLibrary();
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    async function fetchContent() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("content_library")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) {
+        console.error("Error fetching content_library:", error.message);
+        setItems([]);
+      } else {
+        setItems(data || []);
+      }
+      setLoading(false);
+    }
+    fetchContent();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  if (items.length === 0) {
+    return <div>No content found.</div>;
+  }
   return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-6">Content Library</h1>
-      <p className="text-muted-foreground mb-6">
-        Browse through your content library items
-      </p>
-      
-      <ContentLibraryList 
-        data={data || []} 
-        isLoading={isLoading} 
-        error={error as Error | null} 
-      />
-    </div>
+    <ul>
+      {items.map((item) => (
+        <li key={item.id}>
+          <strong>{item.title}</strong>: {item.content}
+        </li>
+      ))}
+    </ul>
   );
 }
 

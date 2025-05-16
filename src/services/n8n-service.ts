@@ -1,5 +1,4 @@
 import { AdSuggestion, AdCategory, ChatMessage, ChatHistoryItem } from '../types/ad-types';
-import { toast } from 'sonner';
 
 const N8N_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/1483ba42-2449-4934-b2c9-4b8dc1ec4a34';
 const N8N_CHAT_WEBHOOK_ENDPOINT = 'https://analyzelens.app.n8n.cloud/webhook/acd81780-1f22-46ed-a9f3-e035443ad805';
@@ -8,18 +7,8 @@ const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onload = () => {
-      if (reader.result) {
-        resolve(reader.result as string);
-        console.log("File successfully converted to base64");
-      } else {
-        reject(new Error("Failed to convert file to base64 - reader.result is null"));
-      }
-    };
-    reader.onerror = (error) => {
-      console.error("Error in fileToBase64:", error);
-      reject(error);
-    };
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
   });
 };
 
@@ -35,51 +24,32 @@ export const generateAdSuggestions = async (
     // Generate mock suggestions first
     const suggestions = generateMockSuggestions(targetAudience, topicArea);
     
-    console.log('Image received in generateAdSuggestions:', image ? `${image.name} (${image.size} bytes)` : 'No image');
-    
     // Convert image to base64 if it exists
-    let base64Image: string | null = null;
-    if (image && image instanceof File) {
-      try {
-        console.log('Converting image to base64...', image.name, image.size);
-        base64Image = await fileToBase64(image);
-        console.log('Image converted to base64 successfully, length:', base64Image.length);
-      } catch (err) {
-        console.error('Error converting image to base64:', err);
-        toast.error('Error processing image');
-      }
-    } else {
-      console.log('No image provided or image is not a File object');
+    let base64Image = null;
+    if (image) {
+      base64Image = await fileToBase64(image);
+      console.log('Image converted to base64 for n8n webhook');
     }
     
     // Send both input, generated suggestions and image data to webhook
     try {
-      const payload = {
-        input: {
-          context,
-          brand_guidelines: brandGuidelines,
-          landing_page_url: landingPageUrl,
-          target_audience: targetAudience,
-          topic_area: topicArea,
-          timestamp: new Date().toISOString()
-        },
-        generated_suggestions: suggestions,
-        uploadedImage: base64Image
-      };
-      
-      console.log('Sending payload to n8n:', {
-        ...payload,
-        input: payload.input,
-        generated_suggestions_count: suggestions.length,
-        uploadedImage: base64Image ? `[Base64 image string - ${base64Image.length} chars]` : null
-      });
-      
       const response = await fetch(N8N_WEBHOOK_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          input: {
+            context,
+            brand_guidelines: brandGuidelines,
+            landing_page_url: landingPageUrl,
+            target_audience: targetAudience,
+            topic_area: topicArea,
+            timestamp: new Date().toISOString()
+          },
+          generated_suggestions: suggestions,
+          uploadedImage: base64Image
+        }),
       });
       
       console.log('Data, suggestions and image sent to n8n successfully');
