@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useAdGenerator } from '@/hooks/use-ad-generator';
 import AdForm from '@/components/AdForm';
 import AdSuggestionList from '@/components/AdSuggestionList';
@@ -11,6 +12,7 @@ import { ArrowLeft, RefreshCw, Download } from 'lucide-react';
 import { uploadDefaultImage } from '@/utils/uploadDefaultImage';
 import { toast } from 'sonner';
 import ContentLibraryList from "@/components/ContentLibraryList";
+import { contentSupabase } from "@/integrations/supabase/content-client";
 
 const Index = () => {
   const {
@@ -35,6 +37,9 @@ const Index = () => {
   // Track whether we're in chat/refinement view
   const showChat = selectedSuggestion !== null;
 
+  const [contentItems, setContentItems] = useState<any[]>([]);
+  const [contentLoading, setContentLoading] = useState(false);
+
   useEffect(() => {
     // Upload the default image when the component mounts
     uploadDefaultImage().catch(error => {
@@ -42,6 +47,45 @@ const Index = () => {
       toast.error('Failed to upload default image');
     });
   }, []);
+
+  // Fetch content for the content library section
+  useEffect(() => {
+    async function fetchRecentContent() {
+      try {
+        setContentLoading(true);
+        const { data, error } = await contentSupabase
+          .from('content_library')
+          .select('id, title, content, content_type, created_at, topic_area, keywords')
+          .order('created_at', { ascending: false })
+          .limit(8);
+
+        if (error) {
+          console.error("Error fetching content:", error);
+          toast.error("Failed to load content library");
+          setContentItems([]);
+        } else {
+          setContentItems(data || []);
+        }
+      } catch (err) {
+        console.error("Unexpected error:", err);
+        toast.error("An unexpected error occurred");
+        setContentItems([]);
+      } finally {
+        setContentLoading(false);
+      }
+    }
+    fetchRecentContent();
+  }, []);
+
+  // Function to handle content selection for context
+  const handleContentSelect = (content: string) => {
+    if (content) {
+      // Update the adInput context with the selected content
+      handleInputChange('context', content);
+      // Provide feedback to the user
+      toast.success("Content added as campaign context");
+    }
+  };
 
   // Function to handle image download
   const handleImageDownload = () => {
@@ -94,8 +138,16 @@ const Index = () => {
         {/* Show the Content Library above the rest as a demo */}
         <div className="mb-10">
           <h2 className="text-2xl font-bold mb-4">Content Library</h2>
-          <ContentLibraryList />
+          <p className="text-muted-foreground mb-6">
+            Click on any content row to use it as your Campaign Context.
+          </p>
+          <ContentLibraryList 
+            data={contentItems} 
+            isLoading={contentLoading} 
+            onContentSelect={handleContentSelect}
+          />
         </div>
+        
         {showChat ? (
           // Chat/Refinement View
           <div>

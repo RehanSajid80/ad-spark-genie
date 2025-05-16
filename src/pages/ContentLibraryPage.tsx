@@ -1,10 +1,14 @@
 
 import { useState, useEffect } from "react";
 import { contentSupabase } from "@/integrations/supabase/content-client";
+import ContentLibraryList from "@/components/ContentLibraryList";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import Header from "@/components/Header";
 
 function ContentLibraryPage() {
   const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function fetchContent() {
@@ -13,9 +17,10 @@ function ContentLibraryPage() {
         .from("content_library")
         .select("*")
         .order("created_at", { ascending: false });
+
       if (error) {
-        console.error("Error fetching content_library:", error.message);
-        setItems([]);
+        console.error("Error fetching content:", error);
+        toast.error("Failed to load content library");
       } else {
         setItems(data || []);
       }
@@ -24,20 +29,22 @@ function ContentLibraryPage() {
     fetchContent();
   }, []);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-  if (items.length === 0) {
-    return <div>No content found.</div>;
-  }
   return (
-    <ul>
-      {items.map((item) => (
-        <li key={item.id}>
-          <strong>{item.title}</strong>: {item.content}
-        </li>
-      ))}
-    </ul>
+    <div className="min-h-screen bg-purple-gradient">
+      <Header />
+      <main className="container py-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Content Library</h1>
+          <Button onClick={() => window.location.href = "/"}>
+            Back to Ad Generator
+          </Button>
+        </div>
+        <p className="text-muted-foreground mb-6">
+          Browse and manage your content library. This content can be used to generate ads.
+        </p>
+        <ContentLibraryList data={items} isLoading={loading} />
+      </main>
+    </div>
   );
 }
 
