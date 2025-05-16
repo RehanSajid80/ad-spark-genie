@@ -135,19 +135,6 @@ const Index = () => {
       <Header />
 
       <main className="container py-6">
-        {/* Show the Content Library above the rest as a demo */}
-        <div className="mb-10">
-          <h2 className="text-2xl font-bold mb-4">Content Library</h2>
-          <p className="text-muted-foreground mb-6">
-            Click on any content row to use it as your Campaign Context.
-          </p>
-          <ContentLibraryList 
-            data={contentItems} 
-            isLoading={contentLoading} 
-            onContentSelect={handleContentSelect}
-          />
-        </div>
-        
         {showChat ? (
           // Chat/Refinement View
           <div>
@@ -244,9 +231,9 @@ const Index = () => {
             />
           </div>
         ) : (
-          // Initial Input View
-          <div className="space-y-12">
-            <div className="text-center max-w-2xl mx-auto">
+          // Initial Input View - Changed to horizontal layout
+          <div>
+            <div className="text-center max-w-3xl mx-auto mb-8">
               <h1 className="text-3xl font-bold tracking-tight mb-3">
                 Generate AI-Powered Ads for LinkedIn & Google
               </h1>
@@ -255,19 +242,41 @@ const Index = () => {
               </p>
             </div>
             
-            <div className="max-w-xl mx-auto">
-              <AdForm 
-                adInput={adInput}
-                handleInputChange={handleInputChange}
-                handleImageChange={handleImageChange}
-                generateAds={generateAds}
-                isGenerating={isGenerating}
-                isUploading={isUploading}
-                setIsUploading={setIsUploading}
-              />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Side: Ad Creation Form */}
+              <div className="order-2 lg:order-1">
+                <h2 className="text-2xl font-bold mb-4">Create Your Ad</h2>
+                <p className="text-muted-foreground mb-6">
+                  Fill out the form below to generate your ad suggestions.
+                </p>
+                <AdForm 
+                  adInput={adInput}
+                  handleInputChange={handleInputChange}
+                  handleImageChange={handleImageChange}
+                  generateAds={generateAds}
+                  isGenerating={isGenerating}
+                  isUploading={isUploading}
+                  setIsUploading={setIsUploading}
+                />
+                
+                <div className="mt-8 lg:mt-12">
+                  <CategoryFeatures />
+                </div>
+              </div>
+              
+              {/* Right Side: Content Library */}
+              <div className="order-1 lg:order-2">
+                <h2 className="text-2xl font-bold mb-4">Content Library</h2>
+                <p className="text-muted-foreground mb-6">
+                  Click on any content row to use it as your Campaign Context.
+                </p>
+                <ContentLibraryList 
+                  data={contentItems} 
+                  isLoading={contentLoading} 
+                  onContentSelect={handleContentSelect}
+                />
+              </div>
             </div>
-            
-            <CategoryFeatures />
           </div>
         )}
       </main>
