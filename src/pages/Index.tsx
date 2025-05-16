@@ -231,7 +231,7 @@ const Index = () => {
             />
           </div>
         ) : (
-          // Initial Input View - Changed to horizontal layout
+          // Initial Input View - Updated layout
           <div>
             <div className="text-center max-w-3xl mx-auto mb-8">
               <h1 className="text-3xl font-bold tracking-tight mb-3">
@@ -243,8 +243,21 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Left Side: Ad Creation Form */}
-              <div className="order-2 lg:order-1">
+              {/* Left Side: Content Library - Swapped from right to left */}
+              <div className="order-1">
+                <h2 className="text-2xl font-bold mb-4">Content Library</h2>
+                <p className="text-muted-foreground mb-6">
+                  Click on any content row to use it as your Campaign Context.
+                </p>
+                <ContentLibraryList 
+                  data={contentItems} 
+                  isLoading={contentLoading} 
+                  onContentSelect={handleContentSelect}
+                />
+              </div>
+              
+              {/* Right Side: Ad Creation Form - Swapped from left to right */}
+              <div className="order-2">
                 <h2 className="text-2xl font-bold mb-4">Create Your Ad</h2>
                 <p className="text-muted-foreground mb-6">
                   Fill out the form below to generate your ad suggestions.
@@ -258,24 +271,12 @@ const Index = () => {
                   isUploading={isUploading}
                   setIsUploading={setIsUploading}
                 />
-                
-                <div className="mt-8 lg:mt-12">
-                  <CategoryFeatures />
-                </div>
               </div>
-              
-              {/* Right Side: Content Library */}
-              <div className="order-1 lg:order-2">
-                <h2 className="text-2xl font-bold mb-4">Content Library</h2>
-                <p className="text-muted-foreground mb-6">
-                  Click on any content row to use it as your Campaign Context.
-                </p>
-                <ContentLibraryList 
-                  data={contentItems} 
-                  isLoading={contentLoading} 
-                  onContentSelect={handleContentSelect}
-                />
-              </div>
+            </div>
+            
+            {/* Full width Current Ad Trends section */}
+            <div className="mt-12 w-full">
+              <CategoryFeatures />
             </div>
           </div>
         )}
