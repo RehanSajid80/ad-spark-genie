@@ -8,8 +8,9 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { Loader2 } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Loader2, FileText, Calendar } from "lucide-react";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface ContentLibraryListProps {
   data?: any[];
@@ -59,14 +60,15 @@ const ContentLibraryList = ({
 
   return (
     <Card className="overflow-hidden border border-purple-200 shadow-md rounded-xl">
-      <div className="overflow-x-auto">
+      <CardHeader className="bg-gradient-to-r from-ad-purple-light to-purple-50 pb-4">
+        <CardTitle className="text-xl text-ad-purple-dark">Content Library</CardTitle>
+      </CardHeader>
+      <div className="overflow-x-auto p-4">
         <Table>
-          <TableHeader className="bg-gradient-to-r from-ad-purple-light to-purple-50">
+          <TableHeader className="bg-purple-50/50">
             <TableRow>
               <TableHead className="font-semibold text-ad-purple-dark">Title</TableHead>
               <TableHead className="font-semibold text-ad-purple-dark">Content</TableHead>
-              <TableHead className="font-semibold text-ad-purple-dark">Topic Area</TableHead>
-              <TableHead className="font-semibold text-ad-purple-dark">Type</TableHead>
               <TableHead className="font-semibold text-ad-purple-dark">Created</TableHead>
             </TableRow>
           </TableHeader>
@@ -78,31 +80,46 @@ const ContentLibraryList = ({
                 className={onContentSelect ? 
                   "cursor-pointer transition-colors hover:bg-purple-50 hover:shadow-inner" : ""}
               >
-                <TableCell className="font-medium text-ad-gray-dark">{item.title}</TableCell>
-                <TableCell className="max-w-xs truncate text-ad-gray">{item.content}</TableCell>
-                <TableCell className="text-ad-gray">
-                  <span className="px-2 py-1 bg-purple-50 text-ad-purple rounded-full text-xs font-medium">
-                    {item.topic_area}
-                  </span>
+                <TableCell className="font-medium text-ad-gray-dark py-4">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-ad-purple" />
+                    {item.title}
+                  </div>
                 </TableCell>
-                <TableCell className="text-ad-gray">
-                  <span className="px-2 py-1 bg-ad-gray-light text-ad-gray-dark rounded-md text-xs">
-                    {item.content_type}
-                  </span>
+                <TableCell className="max-w-xs truncate text-ad-gray py-4">
+                  {item.content}
+                  {item.keywords && item.keywords.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {item.keywords.slice(0, 3).map((keyword: string, idx: number) => (
+                        <Badge key={idx} variant="outline" className="bg-purple-50 text-ad-purple border-purple-100 text-xs">
+                          {keyword}
+                        </Badge>
+                      ))}
+                      {item.keywords.length > 3 && (
+                        <span className="text-xs text-ad-gray">+{item.keywords.length - 3} more</span>
+                      )}
+                    </div>
+                  )}
                 </TableCell>
-                <TableCell className="text-ad-gray text-sm">
-                  {item.created_at
-                    ? new Date(item.created_at).toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      })
-                    : ""}
+                <TableCell className="text-ad-gray text-sm py-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-ad-gray" />
+                    {item.created_at
+                      ? new Date(item.created_at).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })
+                      : ""}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+      </div>
+      <div className="bg-gradient-to-r from-ad-purple-light/30 to-purple-50/30 p-4 text-center text-sm text-ad-gray-dark border-t border-purple-100">
+        Click on any row to use as your campaign context
       </div>
     </Card>
   );
