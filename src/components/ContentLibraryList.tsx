@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Table,
   TableHeader,
@@ -25,6 +25,8 @@ const ContentLibraryList = ({
   error, 
   onContentSelect 
 }: ContentLibraryListProps) => {
+  const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12 animate-pulse">
@@ -52,9 +54,10 @@ const ContentLibraryList = ({
     );
   }
 
-  const handleRowClick = (content: string) => {
+  const handleRowClick = (content: string, itemId: string | number) => {
     if (onContentSelect && content) {
       onContentSelect(content);
+      setSelectedItemId(itemId);
     }
   };
 
@@ -76,9 +79,11 @@ const ContentLibraryList = ({
             {data.map((item) => (
               <TableRow 
                 key={item.id}
-                onClick={() => handleRowClick(item.content)}
-                className={onContentSelect ? 
-                  "cursor-pointer transition-colors hover:bg-purple-50 hover:shadow-inner" : ""}
+                onClick={() => handleRowClick(item.content, item.id)}
+                className={`${onContentSelect ? 
+                  "cursor-pointer transition-colors hover:bg-purple-50 hover:shadow-inner" : ""} 
+                  ${selectedItemId === item.id ? 
+                  "bg-ad-purple-light/50 border-l-4 border-ad-purple shadow-inner" : ""}`}
               >
                 <TableCell className="font-medium text-ad-gray-dark py-4">
                   <div className="flex items-center gap-2">

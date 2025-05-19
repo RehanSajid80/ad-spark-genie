@@ -29,6 +29,11 @@ function ContentLibraryPage() {
     fetchContent();
   }, []);
 
+  const handleContentSelect = (content: string) => {
+    // In the library view, we just want to show selection without further action
+    toast.info("Content selected. Return to Ad Generator to use this content.");
+  };
+
   return (
     <div className="min-h-screen bg-purple-gradient">
       <Header />
@@ -42,7 +47,11 @@ function ContentLibraryPage() {
         <p className="text-muted-foreground mb-6">
           Browse and manage your content library. This content can be used to generate ads.
         </p>
-        <ContentLibraryList data={items} isLoading={loading} />
+        <ContentLibraryList 
+          data={items} 
+          isLoading={loading} 
+          onContentSelect={handleContentSelect}
+        />
       </main>
     </div>
   );
