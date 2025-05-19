@@ -57,7 +57,7 @@ const MyAdsPage = () => {
     queryFn: async () => {
       // This is just a mock function that returns the static data for now
       // In the future, this would fetch from Supabase or another API
-      return new Promise((resolve) => {
+      return new Promise<typeof mockAds>((resolve) => {
         setTimeout(() => resolve(mockAds), 500);
       });
     }
