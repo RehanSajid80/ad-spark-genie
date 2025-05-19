@@ -9,6 +9,7 @@ import Header from "@/components/Header";
 function ContentLibraryPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedContent, setSelectedContent] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchContent() {
@@ -30,8 +31,9 @@ function ContentLibraryPage() {
   }, []);
 
   const handleContentSelect = (content: string) => {
-    // In the library view, we just want to show selection without further action
-    toast.info("Content selected. Return to Ad Generator to use this content.");
+    setSelectedContent(content);
+    console.log("Content selected in parent:", content.substring(0, 30) + "...");
+    toast.success("Content selected successfully");
   };
 
   return (

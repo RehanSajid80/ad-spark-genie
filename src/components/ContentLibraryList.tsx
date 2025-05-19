@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Table,
@@ -53,11 +52,14 @@ const ContentLibraryList = ({
       </Card>
     );
   }
-
+  
   const handleRowClick = (content: string, itemId: string | number) => {
     if (onContentSelect && content) {
       onContentSelect(content);
       setSelectedItemId(itemId);
+      
+      // Add console log to debug selection
+      console.log("Selected item ID:", itemId);
     }
   };
 
@@ -80,10 +82,12 @@ const ContentLibraryList = ({
               <TableRow 
                 key={item.id}
                 onClick={() => handleRowClick(item.content, item.id)}
-                className={`${onContentSelect ? 
-                  "cursor-pointer transition-colors hover:bg-purple-50 hover:shadow-inner" : ""} 
+                className={`
+                  ${onContentSelect ? 
+                    "cursor-pointer transition-colors hover:bg-purple-50 hover:shadow-inner" : ""} 
                   ${selectedItemId === item.id ? 
-                  "bg-ad-purple-light/50 border-l-4 border-ad-purple shadow-inner" : ""}`}
+                    "bg-ad-purple-light/50 border-l-4 border-ad-purple shadow-inner" : ""}
+                `}
               >
                 <TableCell className="font-medium text-ad-gray-dark py-4">
                   <div className="flex items-center gap-2">
@@ -123,8 +127,8 @@ const ContentLibraryList = ({
           </TableBody>
         </Table>
       </div>
-      <div className="bg-gradient-to-r from-ad-purple-light/30 to-purple-50/30 p-4 text-center text-sm text-ad-gray-dark border-t border-purple-100">
-        Click on any row to use as your campaign context
+      <div className="bg-gradient-to-r from-ad-purple-light/30 to-purple-50/30 p-4 text-center text-sm text-ad-purple-dark border-t border-purple-100">
+        <strong>Tip:</strong> Click on any row to select content
       </div>
     </Card>
   );
