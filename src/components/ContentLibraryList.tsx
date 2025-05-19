@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Table,
@@ -65,8 +66,8 @@ const ContentLibraryList = ({
 
   return (
     <Card className="overflow-hidden border border-purple-200 shadow-md rounded-xl">
-      <CardHeader className="bg-gradient-to-r from-ad-purple-light to-purple-50 pb-4">
-        <CardTitle className="text-xl text-ad-purple-dark">Content Library</CardTitle>
+      <CardHeader className="bg-white pb-4">
+        <CardTitle className="text-xl text-black">Content Library</CardTitle>
       </CardHeader>
       <div className="overflow-x-auto p-4">
         <Table>
