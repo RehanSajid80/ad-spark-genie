@@ -1,62 +1,62 @@
 
-import { useState, useEffect } from "react";
-import { contentSupabase } from "@/integrations/supabase/content-client";
+import React, { useState } from "react";
 import ContentLibraryList from "@/components/ContentLibraryList";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import Header from "@/components/Header";
+import { useContent } from "@/hooks/use-content";
+import { toast } from "@/components/ui/use-toast";
+import Navigation from "@/components/Navigation";
 
-function ContentLibraryPage() {
-  const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+const ContentLibraryPage: React.FC = () => {
+  const { data, isLoading, error } = useContent();
   const [selectedContent, setSelectedContent] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchContent() {
-      setLoading(true);
-      const { data, error } = await contentSupabase
-        .from("content_library")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching content:", error);
-        toast.error("Failed to load content library");
-      } else {
-        setItems(data || []);
-      }
-      setLoading(false);
-    }
-    fetchContent();
-  }, []);
 
   const handleContentSelect = (content: string) => {
     setSelectedContent(content);
-    console.log("Content selected in parent:", content.substring(0, 30) + "...");
-    toast.success("Content selected successfully");
+    
+    // Copy content to clipboard
+    navigator.clipboard.writeText(content)
+      .then(() => {
+        toast({
+          title: "Content copied to clipboard",
+          description: "You can now paste it in your ad creation form.",
+          duration: 3000,
+        });
+      })
+      .catch(err => {
+        console.error("Failed to copy content: ", err);
+        toast({
+          title: "Failed to copy content",
+          description: "Please try selecting the content manually.",
+          variant: "destructive",
+          duration: 3000,
+        });
+      });
   };
 
   return (
-    <div className="min-h-screen bg-purple-gradient">
-      <Header />
-      <main className="container py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Content Library</h1>
-          <Button onClick={() => window.location.href = "/"}>
-            Back to Ad Generator
-          </Button>
-        </div>
-        <p className="text-muted-foreground mb-6">
-          Browse and manage your content library. This content can be used to generate ads.
-        </p>
-        <ContentLibraryList 
-          data={items} 
-          isLoading={loading} 
+    <div className="min-h-screen bg-gray-50">
+      <Navigation />
+      
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8 text-ad-gray-dark">Content Library</h1>
+        
+        <ContentLibraryList
+          data={data}
+          isLoading={isLoading}
+          error={error}
           onContentSelect={handleContentSelect}
         />
-      </main>
+        
+        {selectedContent && (
+          <div className="mt-8 p-6 bg-white rounded-lg shadow border border-purple-200">
+            <h2 className="text-xl font-semibold mb-4 text-ad-purple-dark">Selected Content</h2>
+            <div className="bg-gray-50 p-4 rounded border border-gray-200">
+              <p className="whitespace-pre-wrap">{selectedContent}</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
 
 export default ContentLibraryPage;
