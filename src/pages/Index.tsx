@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import AdForm from "@/components/AdForm";
 import AdSuggestionList from "@/components/AdSuggestionList";
 import ChatBox from "@/components/ChatBox";
-import { AdSuggestion } from "@/types/ad-types";
+import { AdSuggestion, AdInput, ChatMessage } from "@/types/ad-types";
 import { useQuery } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
 
@@ -43,6 +43,17 @@ const mockSuggestions = [
 
 const Index = () => {
   const [selectedSuggestion, setSelectedSuggestion] = useState<AdSuggestion | null>(null);
+  const [adInput, setAdInput] = useState<AdInput>({
+    image: null,
+    context: "",
+    brandGuidelines: "",
+    landingPageUrl: "",
+    targetAudience: "",
+    topicArea: ""
+  });
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   
   // Mock fetching suggestions
   const { data: suggestions } = useQuery({
@@ -50,6 +61,44 @@ const Index = () => {
     queryFn: () => Promise.resolve(mockSuggestions),
     initialData: mockSuggestions,
   });
+
+  const handleInputChange = (field: keyof Omit<AdInput, 'image'>, value: string) => {
+    setAdInput(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageChange = (file: File | null) => {
+    setAdInput(prev => ({ ...prev, image: file }));
+  };
+
+  const generateAds = async () => {
+    setIsGenerating(true);
+    // Simulate API call
+    setTimeout(() => {
+      setIsGenerating(false);
+    }, 2000);
+  };
+
+  const handleSendMessage = (content: string) => {
+    const newMessage: ChatMessage = {
+      id: Date.now().toString(),
+      content,
+      sender: 'user',
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, newMessage]);
+    
+    // Mock AI response
+    setTimeout(() => {
+      const aiResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: "I've noted your feedback about the ad. Would you like me to make specific adjustments to the headline, description, or image recommendation?",
+        sender: 'ai',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, aiResponse]);
+    }, 1500);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -61,7 +110,15 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left panel - Ad Form */}
           <div className="lg:col-span-1 space-y-6">
-            <AdForm />
+            <AdForm 
+              adInput={adInput}
+              handleInputChange={handleInputChange}
+              handleImageChange={handleImageChange}
+              generateAds={generateAds}
+              isGenerating={isGenerating}
+              isUploading={isUploading}
+              setIsUploading={setIsUploading}
+            />
           </div>
           
           {/* Right panel - Suggestions and Chat */}
@@ -75,6 +132,9 @@ const Index = () => {
             {selectedSuggestion && (
               <ChatBox 
                 suggestion={selectedSuggestion}
+                messages={messages}
+                onSendMessage={handleSendMessage}
+                isProcessing={false}
               />
             )}
           </div>

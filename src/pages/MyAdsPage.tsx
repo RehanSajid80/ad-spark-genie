@@ -1,12 +1,12 @@
 
 import React from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Layout2, Grid3X3 } from "lucide-react";
+import { Layout, Grid3X3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import Navigation from "@/components/Navigation";
 
 // Mock data for static display until we implement real data fetching
 const mockAds = [
@@ -73,73 +73,77 @@ const MyAdsPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-ad-gray-dark">My Ads</h1>
-        <div className="flex space-x-2">
-          <Button 
-            variant={viewMode === "grid" ? "default" : "outline"} 
-            size="sm"
-            onClick={() => setViewMode("grid")}
-            className="flex items-center"
-          >
-            <Grid3X3 className="h-4 w-4 mr-1" /> Grid
-          </Button>
-          <Button 
-            variant={viewMode === "list" ? "default" : "outline"} 
-            size="sm"
-            onClick={() => setViewMode("list")}
-            className="flex items-center"
-          >
-            <Layout2 className="h-4 w-4 mr-1" /> List
-          </Button>
+    <div className="min-h-screen bg-gray-50">
+      <Navigation />
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-ad-gray-dark">My Ads</h1>
+          <div className="flex space-x-2">
+            <Button 
+              variant={viewMode === "grid" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setViewMode("grid")}
+              className="flex items-center"
+            >
+              <Grid3X3 className="h-4 w-4 mr-1" /> Grid
+            </Button>
+            <Button 
+              variant={viewMode === "list" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setViewMode("list")}
+              className="flex items-center"
+            >
+              <Layout className="h-4 w-4 mr-1" /> List
+            </Button>
+          </div>
         </div>
-      </div>
 
-      <div className={`
-        grid gap-6 
-        ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "grid-cols-1"}
-      `}>
-        {ads?.map((ad) => (
-          <Card key={ad.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="aspect-video relative overflow-hidden">
-              <img 
-                src={ad.imageUrl} 
-                alt={ad.title} 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/placeholder.svg";
-                }}
-              />
-              <Badge 
-                variant={ad.platform === "linkedin" ? "default" : "secondary"} 
-                className="absolute top-2 right-2"
-              >
-                {ad.platform === "linkedin" ? "LinkedIn" : "Google"}
-              </Badge>
-            </div>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg line-clamp-1">{ad.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {ad.description}
-              </p>
-              {ad.keywords && (
-                <div className="flex flex-wrap gap-1 mt-3">
-                  {ad.keywords.map((keyword, idx) => (
-                    <Badge key={idx} variant="outline" className="bg-ad-purple-light/50 text-xs">
-                      {keyword}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="pt-0 text-xs text-muted-foreground">
-              Created: {new Date(ad.createdAt).toLocaleDateString()}
-            </CardFooter>
-          </Card>
-        ))}
+        <div className={`
+          grid gap-6 
+          ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "grid-cols-1"}
+        `}>
+          {ads?.map((ad) => (
+            <Card key={ad.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="aspect-video relative overflow-hidden">
+                <img 
+                  src={ad.imageUrl} 
+                  alt={ad.title} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder.svg";
+                  }}
+                />
+                <Badge 
+                  variant={ad.platform === "linkedin" ? "default" : "secondary"} 
+                  className="absolute top-2 right-2"
+                >
+                  {ad.platform === "linkedin" ? "LinkedIn" : "Google"}
+                </Badge>
+              </div>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg line-clamp-1">{ad.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {ad.description}
+                </p>
+                {ad.keywords && (
+                  <div className="flex flex-wrap gap-1 mt-3">
+                    {ad.keywords.map((keyword, idx) => (
+                      <Badge key={idx} variant="outline" className="bg-ad-purple-light/50 text-xs">
+                        {keyword}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="pt-0 text-xs text-muted-foreground">
+                Created: {new Date(ad.createdAt).toLocaleDateString()}
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
