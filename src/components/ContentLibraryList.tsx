@@ -9,12 +9,13 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, FileText, Calendar, View, Copy } from "lucide-react";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, FileText, Calendar, View, Copy, Grid, List } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ContentViewDialog from "@/components/ContentViewDialog";
 import { toast } from "@/components/ui/use-toast";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface ContentLibraryListProps {
   data?: any[];
@@ -32,6 +33,7 @@ const ContentLibraryList = ({
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewContent, setViewContent] = useState<any | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid"); // Default to grid view
 
   const handleRowClick = (content: string, itemId: string | number) => {
     if (onContentSelect && content) {
@@ -70,6 +72,18 @@ const ContentLibraryList = ({
     }
   };
 
+  const getContentTypeLabel = (type: string | null | undefined) => {
+    if (!type) return "Not specified";
+    
+    switch(type) {
+      case "pillar": return "Pillar Content";
+      case "support": return "Support Page";
+      case "meta": return "Meta Tags";
+      case "social": return "Social Posts";
+      default: return "Content";
+    }
+  };
+
   if (error) {
     return (
       <div className="text-red-600 text-center py-6 bg-red-50 rounded-lg border border-red-200 p-4">
@@ -88,23 +102,132 @@ const ContentLibraryList = ({
     );
   }
 
-  return (
-    <Card className="overflow-hidden border border-purple-200 shadow-md rounded-xl">
-      <CardHeader className="bg-white pb-4">
-        <CardTitle className="text-xl text-black">Content Library</CardTitle>
-      </CardHeader>
-      <div className="overflow-x-auto p-4">
-        {isLoading ? (
+  if (isLoading) {
+    return (
+      <Card className="border border-purple-200 shadow-md rounded-xl">
+        <CardHeader className="bg-white pb-4">
+          <CardTitle className="text-xl text-black">Content Library</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="space-y-4">
             <div className="flex items-center space-x-4 py-4">
               <Loader2 className="h-6 w-6 animate-spin text-ad-purple" />
               <span className="font-medium text-ad-purple">Loading content...</span>
             </div>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-24 w-full" />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} className="border border-purple-100">
+                  <CardContent className="p-4">
+                    <Skeleton className="h-7 w-3/4 mb-4" />
+                    <Skeleton className="h-16 w-full mb-2" />
+                    <div className="flex gap-2 mt-2">
+                      <Skeleton className="h-5 w-16" />
+                      <Skeleton className="h-5 w-16" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="overflow-hidden border border-purple-200 shadow-md rounded-xl">
+      <CardHeader className="bg-white pb-4">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl text-black">Content Library</CardTitle>
+          <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as "grid" | "list")}>
+            <ToggleGroupItem value="grid" aria-label="Grid view">
+              <Grid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="List view">
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      </CardHeader>
+      
+      <div className="p-4">
+        {viewMode === "grid" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {data.map((item) => (
+              <Card 
+                key={item.id}
+                className={`
+                  border hover:border-ad-purple-light transition-all cursor-pointer
+                  ${selectedItemId === item.id ? "border-ad-purple shadow-md" : "border-gray-200"}
+                `}
+                onClick={() => onContentSelect && handleRowClick(item.content, item.id)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-medium text-ad-gray-dark flex items-center gap-2 truncate">
+                      <FileText className="h-4 w-4 text-ad-purple flex-shrink-0" />
+                      <span className="truncate">{item.title}</span>
+                    </h3>
+                    <Badge className="bg-ad-purple-light/30 text-ad-purple-dark ml-2 flex-shrink-0">
+                      {getContentTypeLabel(item.content_type)}
+                    </Badge>
+                  </div>
+                  
+                  <p className="text-ad-gray text-sm line-clamp-3 mt-2 min-h-[3rem]">
+                    {item.content}
+                  </p>
+                  
+                  {item.keywords && item.keywords.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {item.keywords.slice(0, 2).map((keyword: string, idx: number) => (
+                        <Badge key={idx} variant="outline" className="bg-purple-50 text-ad-purple border-purple-100 text-xs">
+                          {keyword}
+                        </Badge>
+                      ))}
+                      {item.keywords.length > 2 && (
+                        <span className="text-xs text-ad-gray">+{item.keywords.length - 2} more</span>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+                    <div className="flex items-center text-xs text-ad-gray">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {item.created_at
+                        ? new Date(item.created_at).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })
+                        : ""}
+                    </div>
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 w-7 p-0 text-ad-gray hover:text-ad-purple"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewContent(item);
+                        }}
+                      >
+                        <View className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 w-7 p-0 text-ad-gray hover:text-ad-purple"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyContent(item);
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         ) : (
@@ -126,6 +249,7 @@ const ContentLibraryList = ({
                     ${selectedItemId === item.id ? 
                       "bg-ad-purple-light/50 border-l-4 border-ad-purple shadow-inner" : ""}
                   `}
+                  onClick={() => onContentSelect && handleRowClick(item.content, item.id)}
                 >
                   <TableCell className="font-medium text-ad-gray-dark py-4">
                     <div className="flex items-center gap-2">
@@ -192,8 +316,9 @@ const ContentLibraryList = ({
           </Table>
         )}
       </div>
+      
       <div className="bg-gradient-to-r from-ad-purple-light/30 to-purple-50/30 p-4 text-center text-sm text-ad-purple-dark border-t border-purple-100">
-        <strong>Tip:</strong> Click on any row to select content
+        <strong>Tip:</strong> Click on any item to select content
       </div>
 
       {/* Content View Dialog */}
