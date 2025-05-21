@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { AdInput } from '@/types/ad-types';
 import ImageUploader from './ImageUploader';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AdFormProps {
   adInput: AdInput;
@@ -27,6 +28,24 @@ const AdForm: React.FC<AdFormProps> = ({
   isUploading,
   setIsUploading
 }) => {
+  
+  const handleGenerateClick = async () => {
+    try {
+      // Validate required fields
+      if (!adInput.context || !adInput.targetAudience || !adInput.topicArea) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+      
+      console.log("Generating ads with input:", adInput);
+      await generateAds();
+      toast.success("Ad suggestions generated successfully");
+    } catch (error) {
+      console.error("Error generating ads:", error);
+      toast.error("Failed to generate ad suggestions");
+    }
+  };
+  
   return (
     <div className="space-y-6 p-6 bg-white rounded-lg shadow-sm border border-border">
       <div>
@@ -97,7 +116,7 @@ const AdForm: React.FC<AdFormProps> = ({
       </div>
 
       <Button 
-        onClick={generateAds} 
+        onClick={handleGenerateClick} 
         disabled={isGenerating || isUploading || !adInput.context || !adInput.targetAudience || !adInput.topicArea}
         className="w-full"
       >

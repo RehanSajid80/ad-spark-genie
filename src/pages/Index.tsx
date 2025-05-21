@@ -6,40 +6,8 @@ import ChatBox from "@/components/ChatBox";
 import { AdSuggestion, AdInput, ChatMessage } from "@/types/ad-types";
 import { useQuery } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
-
-// Mock data
-const mockSuggestions = [
-  {
-    id: "1",
-    platform: "linkedin",
-    headline: "Boost Your Sales with Our New Solution",
-    description: "Discover how our innovative tool can increase your sales by 30% in just 3 months.",
-    imageRecommendation: "Show people using the product in an office setting, with visible results charts.",
-    dimensions: "1200 x 628 px",
-    generatedImageUrl: null,
-    revisedPrompt: null,
-  },
-  {
-    id: "2",
-    platform: "linkedin",
-    headline: "Transform Your Workflow Today",
-    description: "Say goodbye to tedious processes. Our platform streamlines your operations.",
-    imageRecommendation: "Display before/after scenarios of workflow with noticeable time savings.",
-    dimensions: "1200 x 628 px",
-    generatedImageUrl: null,
-    revisedPrompt: null,
-  },
-  {
-    id: "3",
-    platform: "google",
-    headline: "30% Off - Limited Time Offer",
-    description: "Try our premium plan with a 30% discount. Offer ends this week!",
-    imageRecommendation: "Show product with discount label and timer indicating urgency.",
-    dimensions: "1200 x 628 px",
-    generatedImageUrl: null,
-    revisedPrompt: null,
-  },
-] as AdSuggestion[];
+import { toast } from "sonner";
+import { generateAdSuggestions, sendChatMessage } from "@/services/n8n-service";
 
 const Index = () => {
   const [selectedSuggestion, setSelectedSuggestion] = useState<AdSuggestion | null>(null);
@@ -54,14 +22,8 @@ const Index = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [suggestions, setSuggestions] = useState<AdSuggestion[]>([]);
   
-  // Mock fetching suggestions
-  const { data: suggestions } = useQuery({
-    queryKey: ["suggestions"],
-    queryFn: () => Promise.resolve(mockSuggestions),
-    initialData: mockSuggestions,
-  });
-
   const handleInputChange = (field: keyof Omit<AdInput, 'image'>, value: string) => {
     setAdInput(prev => ({ ...prev, [field]: value }));
   };
@@ -72,13 +34,42 @@ const Index = () => {
 
   const generateAds = async () => {
     setIsGenerating(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      console.log("Calling generateAdSuggestions with:", {
+        image: adInput.image ? `${adInput.image.name} (${adInput.image.size} bytes)` : null,
+        context: adInput.context,
+        brandGuidelines: adInput.brandGuidelines,
+        landingPageUrl: adInput.landingPageUrl,
+        targetAudience: adInput.targetAudience,
+        topicArea: adInput.topicArea
+      });
+      
+      const generatedSuggestions = await generateAdSuggestions(
+        adInput.image,
+        adInput.context,
+        adInput.brandGuidelines,
+        adInput.landingPageUrl,
+        adInput.targetAudience,
+        adInput.topicArea
+      );
+      
+      console.log("Generated suggestions:", generatedSuggestions);
+      setSuggestions(generatedSuggestions);
+      
+      if (generatedSuggestions.length === 0) {
+        toast.error("No suggestions were generated. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error generating ad suggestions:", error);
+      toast.error("Failed to generate ad suggestions. Please try again.");
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
+    if (!selectedSuggestion) return;
+    
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
       content,
@@ -88,16 +79,70 @@ const Index = () => {
     
     setMessages(prev => [...prev, newMessage]);
     
-    // Mock AI response
-    setTimeout(() => {
+    // If we have a selected suggestion with an image URL, use the chat API
+    if (selectedSuggestion.generatedImageUrl) {
+      try {
+        const result = await sendChatMessage(
+          [], // chatHistory - would need to be implemented if tracking full history
+          content,
+          selectedSuggestion.generatedImageUrl
+        );
+        
+        if (result.error) {
+          throw new Error(result.error);
+        }
+        
+        // Update the suggestion with the new image if one was returned
+        if (result.imageUrl) {
+          setSelectedSuggestion({
+            ...selectedSuggestion,
+            generatedImageUrl: result.imageUrl,
+            revisedPrompt: result.dallePrompt || selectedSuggestion.revisedPrompt
+          });
+          
+          // Also update in the suggestions array
+          setSuggestions(prev => 
+            prev.map(s => s.id === selectedSuggestion.id 
+              ? {...s, generatedImageUrl: result.imageUrl, revisedPrompt: result.dallePrompt || s.revisedPrompt}
+              : s
+            )
+          );
+        }
+        
+        // Add AI response
+        const aiResponse: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          content: `I've updated the image based on your request. ${result.dallePrompt ? `\n\nPrompt used: "${result.dallePrompt}"` : ''}`,
+          sender: 'ai',
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, aiResponse]);
+      } catch (error) {
+        console.error("Error processing chat message:", error);
+        
+        const errorMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          content: `Sorry, I encountered an error: ${error.message}`,
+          sender: 'ai',
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    } else {
+      // Fallback for when no image URL is available
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         content: "I've noted your feedback about the ad. Would you like me to make specific adjustments to the headline, description, or image recommendation?",
         sender: 'ai',
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, aiResponse]);
-    }, 1500);
+      
+      setTimeout(() => {
+        setMessages(prev => [...prev, aiResponse]);
+      }, 1000);
+    }
   };
 
   return (
