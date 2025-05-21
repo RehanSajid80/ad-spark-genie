@@ -4,7 +4,6 @@ import { useContentLibrary } from "@/hooks/use-content-library";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
 import { Loader2, RefreshCw, Search, Copy, View } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
@@ -12,15 +11,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 
-// Content types for filtering
-type ContentType = 'all' | 'pillar_content' | 'support_pages' | 'meta_tags' | 'social_posts';
+// Content types for filtering - matching database values
+type ContentType = 'all' | 'pillar' | 'support' | 'meta' | 'social';
 
 const CONTENT_TYPES = [
   { value: "all", label: "All Content" },
-  { value: "pillar_content", label: "Pillar Content" },
-  { value: "support_pages", label: "Support Pages" },
-  { value: "meta_tags", label: "Meta Tags" },
-  { value: "social_posts", label: "Social Posts" },
+  { value: "pillar", label: "Pillar Content" },
+  { value: "support", label: "Support Pages" },
+  { value: "meta", label: "Meta Tags" },
+  { value: "social", label: "Social Posts" },
 ];
 
 const ContentLibraryPage = () => {
@@ -45,9 +44,9 @@ const ContentLibraryPage = () => {
     if (!data) return [];
     
     return data.filter(item => {
-      // Type filter
+      // Type filter - match the exact content_type values from the database
       const typeMatch = selectedType === "all" || 
-                        (item.content_type && item.content_type.toLowerCase() === selectedType);
+                        (item.content_type && item.content_type === selectedType);
       
       // Search filter (title and content)
       const searchMatch = !searchQuery || 
@@ -194,7 +193,12 @@ const ContentLibraryPage = () => {
                       {item.title || "Untitled Content"}
                     </CardTitle>
                     <Badge variant="outline" className="bg-ad-purple-light/20 text-ad-purple text-xs">
-                      {item.content_type || "Content"}
+                      {item.content_type ? 
+                        item.content_type === "pillar" ? "Pillar Content" :
+                        item.content_type === "support" ? "Support Page" :
+                        item.content_type === "meta" ? "Meta Tags" :
+                        item.content_type === "social" ? "Social Posts" : 
+                        "Content" : "Content"}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -335,7 +339,12 @@ const ContentLibraryPage = () => {
               <div>
                 <h3 className="text-sm font-medium text-ad-gray mb-1">Content Type:</h3>
                 <Badge className="bg-ad-purple-light/30 text-ad-purple-dark">
-                  {selectedContent.content_type || "Not specified"}
+                  {selectedContent.content_type ? 
+                    selectedContent.content_type === "pillar" ? "Pillar Content" :
+                    selectedContent.content_type === "support" ? "Support Page" :
+                    selectedContent.content_type === "meta" ? "Meta Tags" :
+                    selectedContent.content_type === "social" ? "Social Posts" : 
+                    "Content" : "Not specified"}
                 </Badge>
               </div>
               
