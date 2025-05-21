@@ -6,13 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
-import { Loader2, RefreshCw, Search, Filter, Copy, View } from "lucide-react";
+import { Loader2, RefreshCw, Search, Copy, View } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 
 // Content types for filtering
+type ContentType = 'all' | 'pillar_content' | 'support_pages' | 'meta_tags' | 'social_posts';
+
 const CONTENT_TYPES = [
   { value: "all", label: "All Content" },
   { value: "pillar_content", label: "Pillar Content" },
@@ -24,7 +26,7 @@ const CONTENT_TYPES = [
 const ContentLibraryPage = () => {
   const { data, isLoading, error, refetch } = useContentLibrary();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedType, setSelectedType] = useState("all");
+  const [selectedType, setSelectedType] = useState<ContentType>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedContent, setSelectedContent] = useState<any | null>(null);
   const itemsPerPage = 8;
@@ -146,8 +148,8 @@ const ContentLibraryPage = () => {
           </div>
         </div>
 
-        {/* Search and Filter */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        {/* Search and Horizontal Type Selection Navbar */}
+        <div className="flex flex-col gap-4 mb-6">
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -157,21 +159,25 @@ const ContentLibraryPage = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={selectedType} onValueChange={setSelectedType}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Content" />
-              </SelectTrigger>
-              <SelectContent>
-                {CONTENT_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          
+          {/* Horizontal Content Type Navigation */}
+          <Tabs 
+            value={selectedType} 
+            onValueChange={(value) => setSelectedType(value as ContentType)}
+            className="w-full"
+          >
+            <TabsList className="w-full h-auto p-1 bg-slate-100">
+              {CONTENT_TYPES.map((type) => (
+                <TabsTrigger 
+                  key={type.value} 
+                  value={type.value}
+                  className={`flex-grow ${selectedType === type.value ? 'bg-white shadow-sm' : ''}`}
+                >
+                  {type.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
 
         {/* Content Cards Grid */}
