@@ -11,7 +11,7 @@ export const useContent = () => {
     queryFn: async () => {
       // TYPE WORKAROUND: casting to 'any' since Supabase types may lack content_library table.
       const { data, error } = await (contentSupabase as any)
-        .from("content_library")  // Changed from "content" to "content_library"
+        .from("content_library")
         .select("*")
         .order("created_at", { ascending: false });
         
