@@ -1,4 +1,5 @@
 
+
 export type AdPlatform = 'linkedin' | 'google';
 
 export interface AdInput {
@@ -33,4 +34,14 @@ export interface ChatHistoryItem {
   userInstruction: string;
   dallePrompt?: string;
   imageUrl?: string;
+}
+
+export interface AdCategory {
+  category: string;
+  description: string;
+  trending_topics: string[];
+  timestamp: string;
+  metadata: {
+    background_style: string;
+  };
 }
