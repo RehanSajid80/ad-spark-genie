@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { AdInput } from '@/types/ad-types';
 import ImageUploader from './ImageUploader';
-import { Loader2, Wand, MessageCircle } from 'lucide-react';
+import { Loader2, Wand } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdFormProps {
@@ -56,13 +56,6 @@ const AdForm: React.FC<AdFormProps> = ({
     console.log("Refinement button clicked, calling onSelectAndRefine");
     if (onSelectAndRefine) {
       onSelectAndRefine();
-    }
-  };
-
-  const handleChatClick = () => {
-    console.log("Chat button clicked");
-    if (openChatPopup) {
-      openChatPopup();
     }
   };
   
@@ -147,33 +140,20 @@ const AdForm: React.FC<AdFormProps> = ({
       </div>
 
       {!isImageRefinementMode && (
-        <>
-          <Button 
-            onClick={handleGenerateClick} 
-            disabled={isGenerating || isUploading || !adInput.context || !adInput.targetAudience || !adInput.topicArea}
-            className="w-full mb-2"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating Ad Suggestions...
-              </>
-            ) : (
-              'Generate Ad Suggestions'
-            )}
-          </Button>
-          
-          {openChatPopup && (
-            <Button
-              variant="outline"
-              onClick={handleChatClick}
-              className="w-full gap-2"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Chat with AI about your Ad
-            </Button>
+        <Button 
+          onClick={handleGenerateClick} 
+          disabled={isGenerating || isUploading || !adInput.context || !adInput.targetAudience || !adInput.topicArea}
+          className="w-full mb-2"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generating Ad Suggestions...
+            </>
+          ) : (
+            'Generate Ad Suggestions'
           )}
-        </>
+        </Button>
       )}
       
       {isImageRefinementMode && (
