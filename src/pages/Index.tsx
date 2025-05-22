@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
 import { AdSuggestion, AdInput } from "@/types/ad-types";
 import { generateAdSuggestions } from "@/services/n8n-service";
-import Navigation from "@/components/Navigation";
+import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AdCreationContainer from "@/components/AdCreationContainer";
@@ -135,35 +134,36 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      
-      <AdCreationContainer
-        adInput={adInput}
-        suggestions={suggestions}
-        selectedSuggestion={selectedSuggestion}
-        messages={messages}
-        isGenerating={isGenerating}
-        isUploading={isUploading}
-        isProcessing={isProcessing}
-        isImageRefinementMode={isImageRefinementMode}
-        refinementDialogProps={{
-          isOpen: isRefinementDialogOpen,
-          onClose: closeRefinementDialog,
-          messages: refinementMessages,
-          onSendMessage: handleSendImageRefinement,
-          isProcessing: isRefinementProcessing
-        }}
-        handlers={{
-          handleInputChange,
-          handleImageChange,
-          handleSelectAndRefine,
-          generateAds,
-          setIsUploading,
-          handleSendMessage,
-          setSelectedSuggestion: handleSelectSuggestion
-        }}
-      />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header />
+      <div className="flex-1">
+        <AdCreationContainer
+          adInput={adInput}
+          suggestions={suggestions}
+          selectedSuggestion={selectedSuggestion}
+          messages={messages}
+          isGenerating={isGenerating}
+          isUploading={isUploading}
+          isProcessing={isProcessing}
+          isImageRefinementMode={isImageRefinementMode}
+          refinementDialogProps={{
+            isOpen: isRefinementDialogOpen,
+            onClose: closeRefinementDialog,
+            messages: refinementMessages,
+            onSendMessage: handleSendImageRefinement,
+            isProcessing: isRefinementProcessing
+          }}
+          handlers={{
+            handleInputChange,
+            handleImageChange,
+            handleSelectAndRefine,
+            generateAds,
+            setIsUploading,
+            handleSendMessage,
+            setSelectedSuggestion: handleSelectSuggestion
+          }}
+        />
+      </div>
     </div>
   );
 };
