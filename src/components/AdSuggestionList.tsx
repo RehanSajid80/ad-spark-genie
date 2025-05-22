@@ -27,12 +27,7 @@ const AdSuggestionList: React.FC<AdSuggestionListProps> = ({
   };
   
   return (
-    <div className="w-full">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Ad Suggestions</h2>
-        {/* "View Details" button removed as requested */}
-      </div>
-      
+    <div className="w-full p-6">
       <Tabs defaultValue="linkedin" className="w-full">
         <TabsList className="grid grid-cols-2 mb-4">
           <TabsTrigger value="linkedin">LinkedIn Ads</TabsTrigger>
@@ -40,7 +35,7 @@ const AdSuggestionList: React.FC<AdSuggestionListProps> = ({
         </TabsList>
         
         <TabsContent value="linkedin" className="animate-fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {linkedinSuggestions.map(suggestion => (
               <AdSuggestionCard
                 key={suggestion.id}
@@ -48,8 +43,6 @@ const AdSuggestionList: React.FC<AdSuggestionListProps> = ({
                 isSelected={selectedSuggestion?.id === suggestion.id}
                 onSelect={(s) => {
                   onSelect(s);
-                  // Optionally open popup when selecting
-                  // handleOpenPopup(s);
                 }}
               />
             ))}
@@ -62,7 +55,7 @@ const AdSuggestionList: React.FC<AdSuggestionListProps> = ({
         </TabsContent>
         
         <TabsContent value="google" className="animate-fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {googleSuggestions.map(suggestion => (
               <AdSuggestionCard
                 key={suggestion.id}

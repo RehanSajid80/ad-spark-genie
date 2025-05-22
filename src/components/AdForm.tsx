@@ -60,7 +60,7 @@ const AdForm: React.FC<AdFormProps> = ({
   };
   
   return (
-    <div className="space-y-6 p-6 bg-white rounded-lg shadow-sm border border-border">
+    <div className="space-y-6 p-6">
       <div>
         <h3 className="text-lg font-medium mb-2">Ad Image</h3>
         <ImageUploader 

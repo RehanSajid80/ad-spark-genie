@@ -5,7 +5,7 @@ import AdForm from '@/components/AdForm';
 import AdSuggestionList from '@/components/AdSuggestionList';
 import ChatBox from '@/components/ChatBox';
 import ImageRefinementDialog from '@/components/ImageRefinementDialog';
-import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface AdCreationContainerProps {
   adInput: AdInput;
@@ -69,33 +69,39 @@ const AdCreationContainer: React.FC<AdCreationContainerProps> = ({
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left panel - Ad Form */}
-        <div className="space-y-6">
-          <div className="flex items-center mb-4">
-            <h2 className="text-xl font-semibold">Create Your Ad</h2>
-          </div>
-          
-          <AdForm 
-            adInput={adInput}
-            handleInputChange={handlers.handleInputChange}
-            handleImageChange={handlers.handleImageChange}
-            generateAds={handlers.generateAds}
-            isGenerating={isGenerating}
-            isUploading={isUploading}
-            setIsUploading={handlers.setIsUploading}
-            onSelectAndRefine={handlers.handleSelectAndRefine}
-            isImageRefinementMode={isImageRefinementMode}
-            openChatPopup={openChatPopup}
-          />
-        </div>
+        <Card className="shadow-md border border-border bg-background">
+          <CardHeader className="pb-4 bg-muted/40">
+            <CardTitle className="text-xl font-semibold">Create Your Ad</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <AdForm 
+              adInput={adInput}
+              handleInputChange={handlers.handleInputChange}
+              handleImageChange={handlers.handleImageChange}
+              generateAds={handlers.generateAds}
+              isGenerating={isGenerating}
+              isUploading={isUploading}
+              setIsUploading={handlers.setIsUploading}
+              onSelectAndRefine={handlers.handleSelectAndRefine}
+              isImageRefinementMode={isImageRefinementMode}
+              openChatPopup={openChatPopup}
+            />
+          </CardContent>
+        </Card>
         
         {/* Right panel - Suggestions */}
-        <div className="space-y-6">
-          <AdSuggestionList 
-            suggestions={suggestions} 
-            selectedSuggestion={selectedSuggestion}
-            onSelect={handlers.setSelectedSuggestion}
-          />
-        </div>
+        <Card className="shadow-md border border-border bg-background">
+          <CardHeader className="pb-4 bg-muted/40">
+            <CardTitle className="text-xl font-semibold">Ad Suggestions</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <AdSuggestionList 
+              suggestions={suggestions} 
+              selectedSuggestion={selectedSuggestion}
+              onSelect={handlers.setSelectedSuggestion}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Chat Popup */}
