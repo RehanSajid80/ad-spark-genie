@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { AdSuggestion } from '@/types/ad-types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ImageIcon, MessageSquare } from 'lucide-react';
+import { ImageIcon, MessageSquare, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import AdSuggestionDetailPopup from './AdSuggestionDetailPopup';
 
 interface AdSuggestionCardProps {
   suggestion: AdSuggestion;
@@ -38,6 +38,7 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
   const [cardImage, setCardImage] = useState("/lovable-uploads/32455e0f-c91f-4dce-ae71-9f815d8df69f.png");
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   // Effect to update card image when generatedImageUrl changes
   useEffect(() => {
@@ -173,7 +174,7 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
         </div>
       </CardContent>
       
-      <CardFooter>
+      <CardFooter className="flex flex-col space-y-2">
         <Button 
           variant={isSelected ? "default" : "outline"} 
           className="w-full"
@@ -182,6 +183,22 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
           <MessageSquare className="h-4 w-4 mr-2" />
           {isSelected ? 'Continue Refining' : 'Select & Refine'}
         </Button>
+        
+        <Button 
+          variant="secondary"
+          className="w-full"
+          onClick={() => setIsPopupOpen(true)}
+        >
+          <ExternalLink className="h-4 w-4 mr-2" />
+          View Details
+        </Button>
+        
+        {/* Details Popup */}
+        <AdSuggestionDetailPopup 
+          isOpen={isPopupOpen}
+          onOpenChange={setIsPopupOpen}
+          suggestion={suggestion}
+        />
       </CardFooter>
     </Card>
   );
