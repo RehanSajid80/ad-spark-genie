@@ -47,7 +47,9 @@ const ChatBox: React.FC<ChatBoxProps> = ({
     <Card className={`flex flex-col ${isDialogMode ? 'h-full border-0 shadow-none' : 'h-full'}`}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-md">Refine Your Ad</CardTitle>
+          <CardTitle className="text-md">
+            {suggestion.platform === 'linkedin' ? 'LinkedIn Ad' : 'Google Ad'} Refinement
+          </CardTitle>
           <div className="flex items-center gap-2">
             {isDialogMode && onToggleDialogSize && (
               <Button 
@@ -65,13 +67,13 @@ const ChatBox: React.FC<ChatBoxProps> = ({
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          Chat with AI to improve your selected ad suggestion
+          Chat with AI to improve your {isDialogMode ? 'image' : 'selected ad suggestion'}
         </p>
       </CardHeader>
       
       <CardContent className="flex-grow overflow-hidden p-0 relative">
         <ScrollArea className={`${isDialogMode ? 'h-[350px]' : 'h-[400px]'} p-4`} ref={scrollAreaRef as any}>
-          {/* Image preview at the top if we are in image refinement mode */}
+          {/* Image preview at the top if we have a generated image */}
           {suggestion.generatedImageUrl && (
             <div className="flex justify-center my-4">
               <img 
