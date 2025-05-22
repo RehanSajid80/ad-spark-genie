@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { AdInput } from '@/types/ad-types';
 import ImageUploader from './ImageUploader';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Wand } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdFormProps {
@@ -69,11 +69,12 @@ const AdForm: React.FC<AdFormProps> = ({
         
         {adInput.image && onSelectAndRefine && !isImageRefinementMode && (
           <Button 
-            variant="secondary" 
+            variant="outline"
             onClick={handleRefinementClick} 
-            className="mt-2 w-full"
+            className="mt-2 w-full gap-2"
           >
-            Select & Refine Image
+            <Wand className="h-4 w-4" />
+            Select & Refine Image with AI
           </Button>
         )}
       </div>
