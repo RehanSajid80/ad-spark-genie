@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { AdSuggestion, AdInput } from "@/types/ad-types";
 import { generateAdSuggestions } from "@/services/n8n-service";
 import Navigation from "@/components/Navigation";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AdCreationContainer from "@/components/AdCreationContainer";
 import { useAdChat } from "@/hooks/use-ad-chat";
@@ -23,6 +24,7 @@ const Index = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [suggestions, setSuggestions] = useState<AdSuggestion[]>([]);
   const [isImageRefinementMode, setIsImageRefinementMode] = useState(false);
+  const [isChatPopupOpen, setIsChatPopupOpen] = useState(false);
 
   // Custom hooks
   const { 
@@ -121,6 +123,14 @@ const Index = () => {
   // Dialog handlers
   const handleSelectAndRefine = () => {
     openRefinementDialog();
+  };
+
+  const openChatPopup = () => {
+    setIsChatPopupOpen(true);
+  };
+
+  const closeChatPopup = () => {
+    setIsChatPopupOpen(false);
   };
 
   return (

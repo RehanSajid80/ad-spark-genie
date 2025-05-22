@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AdSuggestion, AdInput, ChatMessage } from '@/types/ad-types';
 import AdForm from '@/components/AdForm';
 import AdSuggestionList from '@/components/AdSuggestionList';
@@ -45,6 +45,16 @@ const AdCreationContainer: React.FC<AdCreationContainerProps> = ({
   refinementDialogProps,
   handlers
 }) => {
+  const [isChatPopupOpen, setIsChatPopupOpen] = useState(false);
+  
+  const openChatPopup = () => {
+    setIsChatPopupOpen(true);
+  };
+  
+  const closeChatPopup = () => {
+    setIsChatPopupOpen(false);
+  };
+  
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 text-ad-gray-dark">Create Your Ad</h1>
@@ -62,10 +72,11 @@ const AdCreationContainer: React.FC<AdCreationContainerProps> = ({
             setIsUploading={handlers.setIsUploading}
             onSelectAndRefine={handlers.handleSelectAndRefine}
             isImageRefinementMode={isImageRefinementMode}
+            openChatPopup={openChatPopup}
           />
         </div>
         
-        {/* Right panel - Suggestions and Chat */}
+        {/* Right panel - Suggestions */}
         <div className="lg:col-span-2 space-y-6">
           <AdSuggestionList 
             suggestions={suggestions} 
@@ -73,16 +84,30 @@ const AdCreationContainer: React.FC<AdCreationContainerProps> = ({
             onSelect={handlers.setSelectedSuggestion}
           />
           
-          {selectedSuggestion && (
-            <ChatBox 
-              suggestion={selectedSuggestion}
-              messages={messages}
-              onSendMessage={handlers.handleSendMessage}
-              isProcessing={isProcessing}
-            />
+          {selectedSuggestion && !isChatPopupOpen && (
+            <div className="flex justify-center">
+              <Button 
+                onClick={openChatPopup}
+                className="mt-4"
+              >
+                Chat with AI about this Ad
+              </Button>
+            </div>
           )}
         </div>
       </div>
+
+      {/* Chat Popup */}
+      {selectedSuggestion && (
+        <ChatBox 
+          suggestion={selectedSuggestion}
+          messages={messages}
+          onSendMessage={handlers.handleSendMessage}
+          isProcessing={isProcessing}
+          isPopup={true}
+          onClosePopup={closeChatPopup}
+        />
+      )}
 
       {/* Image Refinement Dialog */}
       <ImageRefinementDialog
