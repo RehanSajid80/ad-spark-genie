@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AdSuggestion, AdInput, ChatMessage } from '@/types/ad-types';
 import AdForm from '@/components/AdForm';
