@@ -49,6 +49,13 @@ const AdForm: React.FC<AdFormProps> = ({
       toast.error("Failed to generate ad suggestions");
     }
   };
+
+  const handleRefinementClick = () => {
+    console.log("Refinement button clicked, calling onSelectAndRefine");
+    if (onSelectAndRefine) {
+      onSelectAndRefine();
+    }
+  };
   
   return (
     <div className="space-y-6 p-6 bg-white rounded-lg shadow-sm border border-border">
@@ -63,7 +70,7 @@ const AdForm: React.FC<AdFormProps> = ({
         {adInput.image && onSelectAndRefine && !isImageRefinementMode && (
           <Button 
             variant="secondary" 
-            onClick={onSelectAndRefine} 
+            onClick={handleRefinementClick} 
             className="mt-2 w-full"
           >
             Select & Refine Image

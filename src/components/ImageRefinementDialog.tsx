@@ -49,6 +49,8 @@ const ImageRefinementDialog: React.FC<ImageRefinementDialogProps> = ({
     setIsExpanded(!isExpanded);
   };
 
+  console.log("ImageRefinementDialog rendering with isOpen:", isOpen);
+
   // Use Sheet for mobile, Dialog for desktop
   if (isMobile) {
     return (

@@ -24,7 +24,7 @@ export function useRefinementDialog() {
       };
       setRefinementMessages([welcomeMessage]);
     }
-  }, [isRefinementDialogOpen]);
+  }, [isRefinementDialogOpen, refinementMessages.length]);
 
   const handleSendRefinementMessage = async (content: string, imageUrl: string | null) => {
     if (!imageUrl) {
@@ -83,10 +83,12 @@ export function useRefinementDialog() {
   };
 
   const openRefinementDialog = () => {
+    console.log("Opening refinement dialog");
     setIsRefinementDialogOpen(true);
   };
 
   const closeRefinementDialog = () => {
+    console.log("Closing refinement dialog");
     setIsRefinementDialogOpen(false);
   };
 

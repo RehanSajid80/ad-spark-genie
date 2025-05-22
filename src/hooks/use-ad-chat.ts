@@ -13,10 +13,12 @@ export function useAdChat() {
     onUpdateSuggestion?: (updatedSuggestion: AdSuggestion) => void
   ) => {
     if (!selectedSuggestion) {
+      console.error("No suggestion selected for chat");
       return;
     }
     
     setIsProcessing(true);
+    console.log("Sending chat message with suggestion:", selectedSuggestion.id);
     
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -35,6 +37,7 @@ export function useAdChat() {
         throw new Error("No image available for refinement");
       }
 
+      console.log("Sending message to API with image URL:", imageUrl);
       const result = await sendChatMessage(
         [], // chatHistory
         content,
@@ -45,6 +48,8 @@ export function useAdChat() {
         throw new Error(result.error);
       }
       
+      console.log("Received API response:", result);
+      
       // If an image was returned, update the suggestion
       if (result.imageUrl && onUpdateSuggestion) {
         const updatedSuggestion: AdSuggestion = {
@@ -53,6 +58,7 @@ export function useAdChat() {
           revisedPrompt: result.dallePrompt || selectedSuggestion.revisedPrompt
         };
         
+        console.log("Updating suggestion with new image:", updatedSuggestion);
         onUpdateSuggestion(updatedSuggestion);
       }
       
