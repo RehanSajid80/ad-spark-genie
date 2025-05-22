@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AdSuggestion, AdInput, ChatMessage } from '@/types/ad-types';
 import AdForm from '@/components/AdForm';
@@ -90,17 +91,6 @@ const AdCreationContainer: React.FC<AdCreationContainerProps> = ({
             selectedSuggestion={selectedSuggestion}
             onSelect={handlers.setSelectedSuggestion}
           />
-          
-          {selectedSuggestion && !isChatPopupOpen && (
-            <div className="flex justify-center">
-              <Button 
-                onClick={openChatPopup}
-                className="mt-4"
-              >
-                Chat with AI about this Ad
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 

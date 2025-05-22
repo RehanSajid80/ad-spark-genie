@@ -3,8 +3,6 @@ import React, { useState } from 'react';
 import { AdSuggestion } from '@/types/ad-types';
 import AdSuggestionCard from './AdSuggestionCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 import AdSuggestionDetailPopup from './AdSuggestionDetailPopup';
 
 interface AdSuggestionListProps {
@@ -32,15 +30,6 @@ const AdSuggestionList: React.FC<AdSuggestionListProps> = ({
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Ad Suggestions</h2>
-        {selectedSuggestion && (
-          <Button 
-            onClick={() => handleOpenPopup(selectedSuggestion)} 
-            className="bg-ad-purple hover:bg-ad-purple/90"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            View Details
-          </Button>
-        )}
       </div>
       
       <Tabs defaultValue="linkedin" className="w-full">
