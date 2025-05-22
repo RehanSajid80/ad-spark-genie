@@ -75,6 +75,7 @@ const Index = () => {
       
       console.log("Generated suggestions:", generatedSuggestions);
       setSuggestions(generatedSuggestions);
+      setSelectedSuggestion(null); // Reset selection when generating new ads
       
       if (generatedSuggestions.length === 0) {
         toast.error("No suggestions were generated. Please try again.");
@@ -125,12 +126,12 @@ const Index = () => {
     openRefinementDialog();
   };
 
-  const openChatPopup = () => {
-    setIsChatPopupOpen(true);
-  };
-
-  const closeChatPopup = () => {
-    setIsChatPopupOpen(false);
+  // This function is important for handling suggestion selection
+  const handleSelectSuggestion = (suggestion: AdSuggestion | null) => {
+    setSelectedSuggestion(suggestion);
+    if (suggestion) {
+      setIsChatPopupOpen(true);
+    }
   };
 
   return (
@@ -160,7 +161,7 @@ const Index = () => {
           generateAds,
           setIsUploading,
           handleSendMessage,
-          setSelectedSuggestion
+          setSelectedSuggestion: handleSelectSuggestion
         }}
       />
     </div>

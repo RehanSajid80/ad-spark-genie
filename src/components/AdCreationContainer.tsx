@@ -1,11 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AdSuggestion, AdInput, ChatMessage } from '@/types/ad-types';
 import AdForm from '@/components/AdForm';
 import AdSuggestionList from '@/components/AdSuggestionList';
 import ChatBox from '@/components/ChatBox';
 import ImageRefinementDialog from '@/components/ImageRefinementDialog';
-import { Button } from '@/components/ui/button';
 
 interface AdCreationContainerProps {
   adInput: AdInput;
@@ -47,6 +46,13 @@ const AdCreationContainer: React.FC<AdCreationContainerProps> = ({
   handlers
 }) => {
   const [isChatPopupOpen, setIsChatPopupOpen] = useState(false);
+  
+  // Reset chat popup state when selectedSuggestion changes
+  useEffect(() => {
+    if (selectedSuggestion) {
+      setIsChatPopupOpen(true);
+    }
+  }, [selectedSuggestion]);
   
   const openChatPopup = () => {
     setIsChatPopupOpen(true);
@@ -105,7 +111,7 @@ const AdCreationContainer: React.FC<AdCreationContainerProps> = ({
           messages={messages}
           onSendMessage={handlers.handleSendMessage}
           isProcessing={isProcessing}
-          isPopup={true}
+          isPopup={isChatPopupOpen}
           onClosePopup={closeChatPopup}
         />
       )}

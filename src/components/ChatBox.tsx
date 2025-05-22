@@ -38,8 +38,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   
   // Sync open state with the isPopup prop to ensure it opens when requested
   useEffect(() => {
+    setIsOpen(isPopup);
     if (isPopup) {
-      setIsOpen(true);
       setIsMinimized(false);
     }
   }, [isPopup]);
@@ -60,10 +60,10 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   };
 
   const handleDialogChange = (open: boolean) => {
+    setIsOpen(open);
     if (!open && onClosePopup) {
       onClosePopup();
     }
-    setIsOpen(open);
   };
 
   const toggleExpand = () => {
