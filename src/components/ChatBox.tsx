@@ -6,16 +6,25 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { SendIcon, User, Bot, Loader2 } from 'lucide-react';
+import { SendIcon, User, Bot, Loader2, Maximize, Minimize } from 'lucide-react';
 
 interface ChatBoxProps {
   suggestion: AdSuggestion;
   messages: ChatMessage[];
   onSendMessage: (content: string) => void;
   isProcessing?: boolean;
+  isDialogMode?: boolean;
+  onToggleDialogSize?: () => void;
 }
 
-const ChatBox: React.FC<ChatBoxProps> = ({ suggestion, messages, onSendMessage, isProcessing = false }) => {
+const ChatBox: React.FC<ChatBoxProps> = ({ 
+  suggestion, 
+  messages, 
+  onSendMessage, 
+  isProcessing = false,
+  isDialogMode = false,
+  onToggleDialogSize
+}) => {
   const [inputMessage, setInputMessage] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
@@ -35,13 +44,25 @@ const ChatBox: React.FC<ChatBoxProps> = ({ suggestion, messages, onSendMessage, 
   };
   
   return (
-    <Card className="h-full flex flex-col">
+    <Card className={`flex flex-col ${isDialogMode ? 'h-full border-0 shadow-none' : 'h-full'}`}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-md">Refine Your Ad</CardTitle>
-          <Badge variant={suggestion.platform === 'linkedin' ? 'default' : 'secondary'}>
-            {suggestion.platform === 'linkedin' ? 'LinkedIn Ad' : 'Google Ad'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {isDialogMode && onToggleDialogSize && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onToggleDialogSize}
+                className="h-8 w-8"
+              >
+                {isDialogMode ? <Maximize className="h-4 w-4" /> : <Minimize className="h-4 w-4" />}
+              </Button>
+            )}
+            <Badge variant={suggestion.platform === 'linkedin' ? 'default' : 'secondary'}>
+              {suggestion.platform === 'linkedin' ? 'LinkedIn Ad' : 'Google Ad'}
+            </Badge>
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">
           Chat with AI to improve your selected ad suggestion
@@ -49,7 +70,18 @@ const ChatBox: React.FC<ChatBoxProps> = ({ suggestion, messages, onSendMessage, 
       </CardHeader>
       
       <CardContent className="flex-grow overflow-hidden p-0 relative">
-        <ScrollArea className="h-[400px] p-4" ref={scrollAreaRef as any}>
+        <ScrollArea className={`${isDialogMode ? 'h-[350px]' : 'h-[400px]'} p-4`} ref={scrollAreaRef as any}>
+          {/* Image preview at the top if we are in image refinement mode */}
+          {suggestion.generatedImageUrl && (
+            <div className="flex justify-center my-4">
+              <img 
+                src={suggestion.generatedImageUrl} 
+                alt="Generated ad image" 
+                className="max-w-full max-h-[200px] rounded-lg shadow-md"
+              />
+            </div>
+          )}
+          
           <div className="space-y-4">
             {messages.map((message) => (
               <div
@@ -85,17 +117,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({ suggestion, messages, onSendMessage, 
               </div>
             ))}
           </div>
-          
-          {/* Image preview if available */}
-          {suggestion.generatedImageUrl && (
-            <div className="flex justify-center my-4">
-              <img 
-                src={suggestion.generatedImageUrl} 
-                alt="Generated ad image" 
-                className="max-w-full max-h-[300px] rounded-lg shadow-md"
-              />
-            </div>
-          )}
         </ScrollArea>
         
         {/* Loading overlay */}
@@ -114,7 +135,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ suggestion, messages, onSendMessage, 
           <Input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder={isProcessing ? "Processing..." : "Ask how to improve this ad..."}
+            placeholder={isProcessing ? "Processing..." : "Ask how to improve this image..."}
             className="flex-grow"
             disabled={isProcessing}
           />

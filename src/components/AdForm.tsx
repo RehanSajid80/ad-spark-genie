@@ -146,7 +146,7 @@ const AdForm: React.FC<AdFormProps> = ({
         </Button>
       )}
       
-      {isImageRefinementMode && onSelectAndRefine && (
+      {isImageRefinementMode && (
         <div className="text-sm text-muted-foreground">
           Use the chat on the right to refine your image with AI.
         </div>

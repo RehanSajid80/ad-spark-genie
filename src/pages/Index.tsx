@@ -1,8 +1,8 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AdForm from "@/components/AdForm";
 import AdSuggestionList from "@/components/AdSuggestionList";
 import ChatBox from "@/components/ChatBox";
+import ImageRefinementDialog from "@/components/ImageRefinementDialog";
 import { AdSuggestion, AdInput, ChatMessage } from "@/types/ad-types";
 import { useQuery } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
@@ -25,6 +25,8 @@ const Index = () => {
   const [suggestions, setSuggestions] = useState<AdSuggestion[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isImageRefinementMode, setIsImageRefinementMode] = useState(false);
+  const [isRefinementDialogOpen, setIsRefinementDialogOpen] = useState(false);
+  const [refinementMessages, setRefinementMessages] = useState<ChatMessage[]>([]);
   
   const handleInputChange = (field: keyof Omit<AdInput, 'image'>, value: string) => {
     setAdInput(prev => ({ ...prev, [field]: value }));
@@ -33,6 +35,25 @@ const Index = () => {
   const handleImageChange = (file: File | null) => {
     setAdInput(prev => ({ ...prev, image: file }));
   };
+
+  // Reset refinement messages when the image changes
+  useEffect(() => {
+    if (!isRefinementDialogOpen) {
+      // Keep messages in memory even when dialog is closed
+      return;
+    }
+    
+    // If the dialog is opened for the first time and there are no messages, add a welcome message
+    if (refinementMessages.length === 0) {
+      const welcomeMessage: ChatMessage = {
+        id: Date.now().toString(),
+        content: "I'm ready to help you refine your image! Describe what changes you'd like to make.",
+        sender: 'ai',
+        timestamp: new Date()
+      };
+      setRefinementMessages([welcomeMessage]);
+    }
+  }, [isRefinementDialogOpen]);
 
   const generateAds = async () => {
     setIsGenerating(true);
@@ -167,24 +188,70 @@ const Index = () => {
       setIsProcessing(false);
     }
   };
-  
-  const handleSelectAndRefine = () => {
-    setIsImageRefinementMode(true);
-    // Clear existing messages when entering image refinement mode
-    setMessages([]);
+
+  const handleSendRefinementMessage = async (content: string) => {
+    setIsProcessing(true);
     
-    // Add an initial welcome message
-    const welcomeMessage: ChatMessage = {
+    const newMessage: ChatMessage = {
       id: Date.now().toString(),
-      content: "I'm ready to help you refine your image! Describe what changes you'd like to make.",
-      sender: 'ai',
+      content,
+      sender: 'user',
       timestamp: new Date()
     };
-    setMessages([welcomeMessage]);
-  };
+    
+    setRefinementMessages(prev => [...prev, newMessage]);
+    
+    try {
+      // Use the current uploaded image URL
+      const imageUrl = adInput.image ? URL.createObjectURL(adInput.image) : null;
+      
+      if (!imageUrl) {
+        throw new Error("No image available for refinement");
+      }
 
-  const handleExitRefinementMode = () => {
-    setIsImageRefinementMode(false);
+      const result = await sendChatMessage(
+        [], // chatHistory - would need to be implemented if tracking full history
+        content,
+        imageUrl
+      );
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      // If we get back a new image URL, update the adInput.image
+      if (result.imageUrl) {
+        // We can't directly update adInput.image as it's a File object
+        // But we will show the updated image in the dialog
+
+        // Add AI response with the new image
+        const aiResponse: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          content: `I've updated the image based on your request. ${result.dallePrompt ? `\n\nPrompt used: "${result.dallePrompt}"` : ''}`,
+          sender: 'ai',
+          timestamp: new Date()
+        };
+        
+        setRefinementMessages(prev => [...prev, aiResponse]);
+      }
+    } catch (error) {
+      console.error("Error processing refinement message:", error);
+      
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: `Sorry, I encountered an error: ${error.message}`,
+        sender: 'ai',
+        timestamp: new Date()
+      };
+      
+      setRefinementMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+  const handleSelectAndRefine = () => {
+    setIsRefinementDialogOpen(true);
   };
 
   return (
@@ -212,55 +279,34 @@ const Index = () => {
           
           {/* Right panel - Suggestions and Chat */}
           <div className="lg:col-span-2 space-y-6">
-            {isImageRefinementMode ? (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold">Image Refinement Mode</h2>
-                  <button 
-                    onClick={handleExitRefinementMode}
-                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-sm"
-                  >
-                    Back to Ad Suggestions
-                  </button>
-                </div>
-                
-                <ChatBox 
-                  suggestion={selectedSuggestion || {
-                    id: 'image-refinement',
-                    platform: 'linkedin',
-                    headline: "Image Refinement",
-                    description: "Use the chat to refine your image",
-                    imageRecommendation: "Describe what you want to see in your image",
-                    dimensions: '1200 x 627 pixels',
-                    generatedImageUrl: adInput.image ? URL.createObjectURL(adInput.image) : null,
-                    revisedPrompt: null
-                  }}
-                  messages={messages}
-                  onSendMessage={handleSendMessage}
-                  isProcessing={isProcessing}
-                />
-              </div>
-            ) : (
-              <>
-                <AdSuggestionList 
-                  suggestions={suggestions} 
-                  selectedSuggestion={selectedSuggestion}
-                  onSelect={setSelectedSuggestion}
-                />
-                
-                {selectedSuggestion && (
-                  <ChatBox 
-                    suggestion={selectedSuggestion}
-                    messages={messages}
-                    onSendMessage={handleSendMessage}
-                    isProcessing={isProcessing}
-                  />
-                )}
-              </>
+            <AdSuggestionList 
+              suggestions={suggestions} 
+              selectedSuggestion={selectedSuggestion}
+              onSelect={setSelectedSuggestion}
+            />
+            
+            {selectedSuggestion && (
+              <ChatBox 
+                suggestion={selectedSuggestion}
+                messages={messages}
+                onSendMessage={handleSendMessage}
+                isProcessing={isProcessing}
+              />
             )}
           </div>
         </div>
       </div>
+
+      {/* Image Refinement Dialog */}
+      <ImageRefinementDialog
+        isOpen={isRefinementDialogOpen}
+        onClose={() => setIsRefinementDialogOpen(false)}
+        suggestion={null}
+        messages={refinementMessages}
+        onSendMessage={handleSendRefinementMessage}
+        isProcessing={isProcessing}
+        imageUrl={adInput.image ? URL.createObjectURL(adInput.image) : null}
+      />
     </div>
   );
 };
