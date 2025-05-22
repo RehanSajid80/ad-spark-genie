@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogOverlay } from "@/components/ui/dialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from '@/components/ui/button';
 import { AdSuggestion, ChatMessage } from '@/types/ad-types';
@@ -42,7 +42,8 @@ const ImageRefinementDialog: React.FC<ImageRefinementDialogProps> = ({
     revisedPrompt: null
   } : null);
   
-  if (!chatSuggestion) return null;
+  // If not open or no suggestion, don't render anything
+  if (!isOpen || !chatSuggestion) return null;
   
   const toggleDialogSize = () => {
     setIsExpanded(!isExpanded);
@@ -51,7 +52,7 @@ const ImageRefinementDialog: React.FC<ImageRefinementDialogProps> = ({
   // Use Sheet for mobile, Dialog for desktop
   if (isMobile) {
     return (
-      <Sheet open={isOpen} onOpenChange={() => onClose()}>
+      <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <SheetContent className="w-full sm:max-w-md p-0">
           <div className="h-full flex flex-col">
             <div className="flex justify-between items-center p-3 border-b">
@@ -80,7 +81,8 @@ const ImageRefinementDialog: React.FC<ImageRefinementDialogProps> = ({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogOverlay />
       <DialogContent className={`${isExpanded ? 'max-w-4xl h-[80vh]' : 'max-w-xl h-[600px]'} p-0 flex flex-col`}>
         <div className="flex flex-col h-full">
           <div className="flex justify-between items-center p-3 border-b">
