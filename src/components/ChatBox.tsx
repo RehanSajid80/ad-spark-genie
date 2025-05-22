@@ -201,6 +201,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({
     );
   }
   
+  // Non-dialog mode render - commented out as requested
+  /* 
   // Use a wrapper div with h-full to ensure the card takes up the full height
   return (
     <div className={`h-full ${isDialogMode ? 'flex flex-col' : ''}`}>
@@ -226,7 +228,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({
         
         <CardContent className="flex-grow overflow-hidden p-0 relative">
           <ScrollArea className={`${isDialogMode ? 'h-[400px]' : 'h-[400px]'} p-4`} ref={scrollAreaRef as any}>
-            {/* Image preview at the top if we have a generated image */}
             {suggestion.generatedImageUrl && (
               <div className="flex justify-center my-4">
                 <img 
@@ -281,7 +282,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({
                 </div>
               ))}
               
-              {/* If no messages, show a welcome message */}
               {messages.length === 0 && (
                 <div className="flex justify-center items-center h-32">
                   <p className="text-muted-foreground text-center">
@@ -295,7 +295,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({
             </div>
           </ScrollArea>
           
-          {/* Loading overlay */}
           {isProcessing && (
             <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
               <div className="flex flex-col items-center p-4 bg-white/90 rounded-lg shadow-lg">
@@ -332,6 +331,11 @@ const ChatBox: React.FC<ChatBoxProps> = ({
       </Card>
     </div>
   );
+  */
+  
+  // Provide a simple fallback for non-popup mode
+  return null;
 };
 
 export default ChatBox;
+
