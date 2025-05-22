@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { AdSuggestion, ChatMessage } from '@/types/ad-types';
 import ChatBox from './ChatBox';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { X } from 'lucide-react';
 
 interface ImageRefinementDialogProps {
   isOpen: boolean;
@@ -52,7 +53,17 @@ const ImageRefinementDialog: React.FC<ImageRefinementDialogProps> = ({
     return (
       <Sheet open={isOpen} onOpenChange={onClose}>
         <SheetContent className="w-full sm:max-w-md p-0">
-          <div className="h-full">
+          <div className="h-full flex flex-col">
+            <div className="flex justify-end p-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onClose}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
             <ChatBox
               suggestion={chatSuggestion}
               messages={messages}
@@ -61,15 +72,6 @@ const ImageRefinementDialog: React.FC<ImageRefinementDialogProps> = ({
               isDialogMode={true}
               onToggleDialogSize={toggleDialogSize}
             />
-            <div className="p-4">
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={onClose}
-              >
-                Close
-              </Button>
-            </div>
           </div>
         </SheetContent>
       </Sheet>
@@ -78,16 +80,28 @@ const ImageRefinementDialog: React.FC<ImageRefinementDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`${isExpanded ? 'max-w-4xl h-[80vh]' : 'max-w-xl'} p-0`}>
-        <div className="h-full">
-          <ChatBox
-            suggestion={chatSuggestion}
-            messages={messages}
-            onSendMessage={onSendMessage}
-            isProcessing={isProcessing}
-            isDialogMode={true}
-            onToggleDialogSize={toggleDialogSize}
-          />
+      <DialogContent className={`${isExpanded ? 'max-w-4xl h-[80vh]' : 'max-w-xl h-[600px]'} p-0 flex flex-col`}>
+        <div className="flex flex-col h-full">
+          <div className="flex justify-end p-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onClose}
+              className="h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex-grow">
+            <ChatBox
+              suggestion={chatSuggestion}
+              messages={messages}
+              onSendMessage={onSendMessage}
+              isProcessing={isProcessing}
+              isDialogMode={true}
+              onToggleDialogSize={toggleDialogSize}
+            />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

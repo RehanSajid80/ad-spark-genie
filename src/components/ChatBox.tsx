@@ -48,7 +48,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-md">
-            {suggestion.platform === 'linkedin' ? 'LinkedIn Ad' : 'Google Ad'} Refinement
+            {isDialogMode ? 'Image Refinement' : `${suggestion.platform === 'linkedin' ? 'LinkedIn' : 'Google'} Ad Refinement`}
           </CardTitle>
           <div className="flex items-center gap-2">
             {isDialogMode && onToggleDialogSize && (
@@ -58,7 +58,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
                 onClick={onToggleDialogSize}
                 className="h-8 w-8"
               >
-                {isDialogMode ? <Maximize className="h-4 w-4" /> : <Minimize className="h-4 w-4" />}
+                <Maximize className="h-4 w-4" />
               </Button>
             )}
             <Badge variant={suggestion.platform === 'linkedin' ? 'default' : 'secondary'}>
@@ -67,7 +67,10 @@ const ChatBox: React.FC<ChatBoxProps> = ({
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          Chat with AI to improve your {isDialogMode ? 'image' : 'selected ad suggestion'}
+          {isDialogMode 
+            ? 'Chat with AI to refine and enhance your image'
+            : 'Chat with AI to improve your selected ad suggestion'
+          }
         </p>
       </CardHeader>
       
@@ -127,6 +130,18 @@ const ChatBox: React.FC<ChatBoxProps> = ({
                 </div>
               </div>
             ))}
+            
+            {/* If no messages, show a welcome message */}
+            {messages.length === 0 && (
+              <div className="flex justify-center items-center h-32">
+                <p className="text-muted-foreground text-center">
+                  {isDialogMode 
+                    ? "Describe how you'd like to refine this image. I'll help create the perfect visual for your ad."
+                    : "Ask me how I can help improve your ad. I can suggest changes to copy, layout, and imagery."
+                  }
+                </p>
+              </div>
+            )}
           </div>
         </ScrollArea>
         
@@ -146,7 +161,12 @@ const ChatBox: React.FC<ChatBoxProps> = ({
           <Input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder={isProcessing ? "Processing..." : "Ask how to improve this image..."}
+            placeholder={isProcessing 
+              ? "Processing..." 
+              : isDialogMode 
+                ? "Describe how you want to enhance this image..." 
+                : "Ask how to improve this ad..."
+            }
             className="flex-grow"
             disabled={isProcessing}
           />
