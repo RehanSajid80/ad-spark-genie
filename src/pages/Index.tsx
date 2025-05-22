@@ -23,6 +23,8 @@ const Index = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [suggestions, setSuggestions] = useState<AdSuggestion[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isImageRefinementMode, setIsImageRefinementMode] = useState(false);
   
   const handleInputChange = (field: keyof Omit<AdInput, 'image'>, value: string) => {
     setAdInput(prev => ({ ...prev, [field]: value }));
@@ -68,7 +70,7 @@ const Index = () => {
   };
 
   const handleSendMessage = async (content: string) => {
-    if (!selectedSuggestion) return;
+    setIsProcessing(true);
     
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -79,19 +81,50 @@ const Index = () => {
     
     setMessages(prev => [...prev, newMessage]);
     
-    // If we have a selected suggestion with an image URL, use the chat API
-    if (selectedSuggestion.generatedImageUrl) {
-      try {
-        const result = await sendChatMessage(
-          [], // chatHistory - would need to be implemented if tracking full history
-          content,
-          selectedSuggestion.generatedImageUrl
-        );
-        
-        if (result.error) {
-          throw new Error(result.error);
+    try {
+      // For image refinement mode, we use the current image or the selected suggestion's image
+      const imageUrl = isImageRefinementMode 
+        ? (adInput.image ? URL.createObjectURL(adInput.image) : null) 
+        : (selectedSuggestion?.generatedImageUrl || null);
+      
+      if (!imageUrl && !selectedSuggestion) {
+        throw new Error("No image available for refinement");
+      }
+
+      const result = await sendChatMessage(
+        [], // chatHistory - would need to be implemented if tracking full history
+        content,
+        imageUrl || ''
+      );
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      if (isImageRefinementMode) {
+        // In image refinement mode, we create a temporary suggestion if needed
+        if (!selectedSuggestion) {
+          const tempSuggestion: AdSuggestion = {
+            id: 'temp-' + Date.now(),
+            platform: 'linkedin',
+            headline: "Custom Image",
+            description: "Custom generated image based on your prompt",
+            imageRecommendation: content,
+            dimensions: '1200 x 627 pixels',
+            generatedImageUrl: result.imageUrl || '',
+            revisedPrompt: result.dallePrompt || content
+          };
+          setSelectedSuggestion(tempSuggestion);
+        } else {
+          // Update the existing suggestion
+          setSelectedSuggestion({
+            ...selectedSuggestion,
+            generatedImageUrl: result.imageUrl || selectedSuggestion.generatedImageUrl,
+            revisedPrompt: result.dallePrompt || selectedSuggestion.revisedPrompt
+          });
         }
-        
+      } else if (selectedSuggestion) {
+        // Normal chat mode with a selected suggestion
         // Update the suggestion with the new image if one was returned
         if (result.imageUrl) {
           setSelectedSuggestion({
@@ -108,41 +141,50 @@ const Index = () => {
             )
           );
         }
-        
-        // Add AI response
-        const aiResponse: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          content: `I've updated the image based on your request. ${result.dallePrompt ? `\n\nPrompt used: "${result.dallePrompt}"` : ''}`,
-          sender: 'ai',
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, aiResponse]);
-      } catch (error) {
-        console.error("Error processing chat message:", error);
-        
-        const errorMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          content: `Sorry, I encountered an error: ${error.message}`,
-          sender: 'ai',
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, errorMessage]);
       }
-    } else {
-      // Fallback for when no image URL is available
+      
+      // Add AI response
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: "I've noted your feedback about the ad. Would you like me to make specific adjustments to the headline, description, or image recommendation?",
+        content: `I've updated the image based on your request. ${result.dallePrompt ? `\n\nPrompt used: "${result.dallePrompt}"` : ''}`,
         sender: 'ai',
         timestamp: new Date()
       };
       
-      setTimeout(() => {
-        setMessages(prev => [...prev, aiResponse]);
-      }, 1000);
+      setMessages(prev => [...prev, aiResponse]);
+    } catch (error) {
+      console.error("Error processing chat message:", error);
+      
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: `Sorry, I encountered an error: ${error.message}`,
+        sender: 'ai',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsProcessing(false);
     }
+  };
+  
+  const handleSelectAndRefine = () => {
+    setIsImageRefinementMode(true);
+    // Clear existing messages when entering image refinement mode
+    setMessages([]);
+    
+    // Add an initial welcome message
+    const welcomeMessage: ChatMessage = {
+      id: Date.now().toString(),
+      content: "I'm ready to help you refine your image! Describe what changes you'd like to make.",
+      sender: 'ai',
+      timestamp: new Date()
+    };
+    setMessages([welcomeMessage]);
+  };
+
+  const handleExitRefinementMode = () => {
+    setIsImageRefinementMode(false);
   };
 
   return (
@@ -163,24 +205,58 @@ const Index = () => {
               isGenerating={isGenerating}
               isUploading={isUploading}
               setIsUploading={setIsUploading}
+              onSelectAndRefine={handleSelectAndRefine}
+              isImageRefinementMode={isImageRefinementMode}
             />
           </div>
           
           {/* Right panel - Suggestions and Chat */}
           <div className="lg:col-span-2 space-y-6">
-            <AdSuggestionList 
-              suggestions={suggestions} 
-              selectedSuggestion={selectedSuggestion}
-              onSelect={setSelectedSuggestion}
-            />
-            
-            {selectedSuggestion && (
-              <ChatBox 
-                suggestion={selectedSuggestion}
-                messages={messages}
-                onSendMessage={handleSendMessage}
-                isProcessing={false}
-              />
+            {isImageRefinementMode ? (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold">Image Refinement Mode</h2>
+                  <button 
+                    onClick={handleExitRefinementMode}
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-sm"
+                  >
+                    Back to Ad Suggestions
+                  </button>
+                </div>
+                
+                <ChatBox 
+                  suggestion={selectedSuggestion || {
+                    id: 'image-refinement',
+                    platform: 'linkedin',
+                    headline: "Image Refinement",
+                    description: "Use the chat to refine your image",
+                    imageRecommendation: "Describe what you want to see in your image",
+                    dimensions: '1200 x 627 pixels',
+                    generatedImageUrl: adInput.image ? URL.createObjectURL(adInput.image) : null,
+                    revisedPrompt: null
+                  }}
+                  messages={messages}
+                  onSendMessage={handleSendMessage}
+                  isProcessing={isProcessing}
+                />
+              </div>
+            ) : (
+              <>
+                <AdSuggestionList 
+                  suggestions={suggestions} 
+                  selectedSuggestion={selectedSuggestion}
+                  onSelect={setSelectedSuggestion}
+                />
+                
+                {selectedSuggestion && (
+                  <ChatBox 
+                    suggestion={selectedSuggestion}
+                    messages={messages}
+                    onSendMessage={handleSendMessage}
+                    isProcessing={isProcessing}
+                  />
+                )}
+              </>
             )}
           </div>
         </div>

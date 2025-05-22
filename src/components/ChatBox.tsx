@@ -48,7 +48,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ suggestion, messages, onSendMessage, 
         </p>
       </CardHeader>
       
-      <CardContent className="flex-grow overflow-hidden p-0">
+      <CardContent className="flex-grow overflow-hidden p-0 relative">
         <ScrollArea className="h-[400px] p-4" ref={scrollAreaRef as any}>
           <div className="space-y-4">
             {messages.map((message) => (
@@ -84,19 +84,29 @@ const ChatBox: React.FC<ChatBoxProps> = ({ suggestion, messages, onSendMessage, 
                 </div>
               </div>
             ))}
-            
-            {isProcessing && (
-              <div className="flex justify-start">
-                <div className="flex items-center max-w-[80%] bg-muted p-3 rounded-lg">
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  <div>
-                    <p className="text-sm">Generating response...</p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
+          
+          {/* Image preview if available */}
+          {suggestion.generatedImageUrl && (
+            <div className="flex justify-center my-4">
+              <img 
+                src={suggestion.generatedImageUrl} 
+                alt="Generated ad image" 
+                className="max-w-full max-h-[300px] rounded-lg shadow-md"
+              />
+            </div>
+          )}
         </ScrollArea>
+        
+        {/* Loading overlay */}
+        {isProcessing && (
+          <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+            <div className="flex flex-col items-center p-4 bg-white/90 rounded-lg shadow-lg">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+              <p className="text-sm font-medium">Processing your request...</p>
+            </div>
+          </div>
+        )}
       </CardContent>
       
       <CardFooter className="pt-4">

@@ -17,6 +17,8 @@ interface AdFormProps {
   isGenerating: boolean;
   isUploading: boolean;
   setIsUploading: (isUploading: boolean) => void;
+  onSelectAndRefine?: () => void;
+  isImageRefinementMode?: boolean;
 }
 
 const AdForm: React.FC<AdFormProps> = ({
@@ -26,7 +28,9 @@ const AdForm: React.FC<AdFormProps> = ({
   generateAds,
   isGenerating,
   isUploading,
-  setIsUploading
+  setIsUploading,
+  onSelectAndRefine,
+  isImageRefinementMode = false
 }) => {
   
   const handleGenerateClick = async () => {
@@ -55,6 +59,16 @@ const AdForm: React.FC<AdFormProps> = ({
           setIsUploading={setIsUploading}
           currentImage={adInput.image}
         />
+        
+        {adInput.image && onSelectAndRefine && !isImageRefinementMode && (
+          <Button 
+            variant="outline" 
+            onClick={onSelectAndRefine} 
+            className="mt-2 w-full"
+          >
+            Select & Refine Image
+          </Button>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -115,20 +129,28 @@ const AdForm: React.FC<AdFormProps> = ({
         </div>
       </div>
 
-      <Button 
-        onClick={handleGenerateClick} 
-        disabled={isGenerating || isUploading || !adInput.context || !adInput.targetAudience || !adInput.topicArea}
-        className="w-full"
-      >
-        {isGenerating ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Generating Ad Suggestions...
-          </>
-        ) : (
-          'Generate Ad Suggestions'
-        )}
-      </Button>
+      {!isImageRefinementMode && (
+        <Button 
+          onClick={handleGenerateClick} 
+          disabled={isGenerating || isUploading || !adInput.context || !adInput.targetAudience || !adInput.topicArea}
+          className="w-full"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generating Ad Suggestions...
+            </>
+          ) : (
+            'Generate Ad Suggestions'
+          )}
+        </Button>
+      )}
+      
+      {isImageRefinementMode && onSelectAndRefine && (
+        <div className="text-sm text-muted-foreground">
+          Use the chat on the right to refine your image with AI.
+        </div>
+      )}
     </div>
   );
 };
