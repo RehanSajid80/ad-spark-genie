@@ -62,7 +62,7 @@ const AdForm: React.FC<AdFormProps> = ({
         
         {adInput.image && onSelectAndRefine && !isImageRefinementMode && (
           <Button 
-            variant="outline" 
+            variant="secondary" 
             onClick={onSelectAndRefine} 
             className="mt-2 w-full"
           >

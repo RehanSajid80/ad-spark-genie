@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { SendIcon, User, Bot, Loader2, Maximize, Minimize } from 'lucide-react';
+import { SendIcon, User, Bot, Loader2 } from 'lucide-react';
 
 interface ChatBoxProps {
   suggestion: AdSuggestion;
@@ -45,37 +45,27 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   
   return (
     <Card className={`flex flex-col ${isDialogMode ? 'h-full border-0 shadow-none' : 'h-full'}`}>
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-md">
-            {isDialogMode ? 'Image Refinement' : `${suggestion.platform === 'linkedin' ? 'LinkedIn' : 'Google'} Ad Refinement`}
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            {isDialogMode && onToggleDialogSize && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={onToggleDialogSize}
-                className="h-8 w-8"
-              >
-                <Maximize className="h-4 w-4" />
-              </Button>
-            )}
+      {!isDialogMode && (
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-md">
+              {isDialogMode ? 'Image Refinement' : `${suggestion.platform === 'linkedin' ? 'LinkedIn' : 'Google'} Ad Refinement`}
+            </CardTitle>
             <Badge variant={suggestion.platform === 'linkedin' ? 'default' : 'secondary'}>
               {suggestion.platform === 'linkedin' ? 'LinkedIn Ad' : 'Google Ad'}
             </Badge>
           </div>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {isDialogMode 
-            ? 'Chat with AI to refine and enhance your image'
-            : 'Chat with AI to improve your selected ad suggestion'
-          }
-        </p>
-      </CardHeader>
+          <p className="text-sm text-muted-foreground">
+            {isDialogMode 
+              ? 'Chat with AI to refine and enhance your image'
+              : 'Chat with AI to improve your selected ad suggestion'
+            }
+          </p>
+        </CardHeader>
+      )}
       
       <CardContent className="flex-grow overflow-hidden p-0 relative">
-        <ScrollArea className={`${isDialogMode ? 'h-[350px]' : 'h-[400px]'} p-4`} ref={scrollAreaRef as any}>
+        <ScrollArea className={`${isDialogMode ? 'h-[400px]' : 'h-[400px]'} p-4`} ref={scrollAreaRef as any}>
           {/* Image preview at the top if we have a generated image */}
           {suggestion.generatedImageUrl && (
             <div className="flex justify-center my-4">

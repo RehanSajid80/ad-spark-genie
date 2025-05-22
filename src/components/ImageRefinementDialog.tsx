@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { AdSuggestion, ChatMessage } from '@/types/ad-types';
 import ChatBox from './ChatBox';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { X } from 'lucide-react';
+import { Maximize, Minimize, X } from 'lucide-react';
 
 interface ImageRefinementDialogProps {
   isOpen: boolean;
@@ -51,10 +51,11 @@ const ImageRefinementDialog: React.FC<ImageRefinementDialogProps> = ({
   // Use Sheet for mobile, Dialog for desktop
   if (isMobile) {
     return (
-      <Sheet open={isOpen} onOpenChange={onClose}>
+      <Sheet open={isOpen} onOpenChange={() => onClose()}>
         <SheetContent className="w-full sm:max-w-md p-0">
           <div className="h-full flex flex-col">
-            <div className="flex justify-end p-2">
+            <div className="flex justify-between items-center p-3 border-b">
+              <h3 className="text-lg font-medium">Image Refinement</h3>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -79,20 +80,31 @@ const ImageRefinementDialog: React.FC<ImageRefinementDialogProps> = ({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={() => onClose()}>
       <DialogContent className={`${isExpanded ? 'max-w-4xl h-[80vh]' : 'max-w-xl h-[600px]'} p-0 flex flex-col`}>
         <div className="flex flex-col h-full">
-          <div className="flex justify-end p-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onClose}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+          <div className="flex justify-between items-center p-3 border-b">
+            <h3 className="text-lg font-medium">Image Refinement</h3>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={toggleDialogSize}
+                className="h-8 w-8"
+              >
+                {isExpanded ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onClose}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex-grow">
+          <div className="flex-grow overflow-hidden">
             <ChatBox
               suggestion={chatSuggestion}
               messages={messages}
