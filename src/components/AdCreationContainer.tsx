@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AdSuggestion, AdInput, ChatMessage } from '@/types/ad-types';
 import AdForm from '@/components/AdForm';
@@ -66,9 +67,13 @@ const AdCreationContainer: React.FC<AdCreationContainerProps> = ({
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 text-ad-gray-dark">Create Your Ad</h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left panel - Ad Form */}
-        <div className="lg:col-span-1 space-y-6">
+        <div className="space-y-6">
+          <div className="flex items-center mb-4">
+            <h2 className="text-xl font-semibold">Create Your Ad</h2>
+          </div>
+          
           <AdForm 
             adInput={adInput}
             handleInputChange={handlers.handleInputChange}
@@ -84,23 +89,12 @@ const AdCreationContainer: React.FC<AdCreationContainerProps> = ({
         </div>
         
         {/* Right panel - Suggestions */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
           <AdSuggestionList 
             suggestions={suggestions} 
             selectedSuggestion={selectedSuggestion}
             onSelect={handlers.setSelectedSuggestion}
           />
-          
-          {selectedSuggestion && !isChatPopupOpen && (
-            <div className="flex justify-center">
-              <Button 
-                onClick={openChatPopup}
-                className="mt-4"
-              >
-                Chat with AI about this Ad
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 
