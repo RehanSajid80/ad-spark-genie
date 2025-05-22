@@ -36,10 +36,9 @@ const Index = () => {
     setAdInput(prev => ({ ...prev, image: file }));
   };
 
-  // Reset refinement messages when the image changes
+  // Reset refinement messages when the dialog opens
   useEffect(() => {
     if (!isRefinementDialogOpen) {
-      // Keep messages in memory even when dialog is closed
       return;
     }
     
@@ -229,6 +228,7 @@ const Index = () => {
           id: (Date.now() + 1).toString(),
           content: `I've updated the image based on your request. ${result.dallePrompt ? `\n\nPrompt used: "${result.dallePrompt}"` : ''}`,
           sender: 'ai',
+          imageUrl: result.imageUrl,
           timestamp: new Date()
         };
         

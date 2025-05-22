@@ -1,4 +1,6 @@
 
+export type AdPlatform = 'linkedin' | 'google';
+
 export interface AdInput {
   image: File | null;
   context: string;
@@ -10,13 +12,13 @@ export interface AdInput {
 
 export interface AdSuggestion {
   id: string;
-  platform: 'linkedin' | 'google';
+  platform: AdPlatform;
   headline: string;
   description: string;
   imageRecommendation: string;
   dimensions: string;
-  generatedImageUrl: string | null;
-  revisedPrompt: string | null;
+  generatedImageUrl?: string;
+  revisedPrompt?: string | null;
 }
 
 export interface ChatMessage {
@@ -24,20 +26,11 @@ export interface ChatMessage {
   content: string;
   sender: 'user' | 'ai';
   timestamp: Date;
+  imageUrl?: string; // Added for image messages
 }
 
 export interface ChatHistoryItem {
   userInstruction: string;
   dallePrompt?: string;
   imageUrl?: string;
-}
-
-export interface AdCategory {
-  category: string;
-  description: string;
-  trending_topics: string[];
-  timestamp: string;
-  metadata: {
-    background_style: string;
-  };
 }

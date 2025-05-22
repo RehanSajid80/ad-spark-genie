@@ -106,6 +106,15 @@ const ChatBox: React.FC<ChatBoxProps> = ({
                   </div>
                   <div>
                     <p className="text-sm">{message.content}</p>
+                    {message.imageUrl && (
+                      <div className="mt-2">
+                        <img 
+                          src={message.imageUrl} 
+                          alt="Generated image" 
+                          className="max-w-full rounded-md shadow-sm"
+                        />
+                      </div>
+                    )}
                     <p className="text-xs opacity-70 mt-1">
                       {message.timestamp.toLocaleTimeString([], {
                         hour: '2-digit',
