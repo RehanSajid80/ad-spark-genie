@@ -5,7 +5,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from '@/components/ui/button';
 import { AdSuggestion, ChatMessage } from '@/types/ad-types';
 import ChatBox from './ChatBox';
-import { useMediaQuery } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ImageRefinementDialogProps {
   isOpen: boolean;
@@ -27,7 +27,7 @@ const ImageRefinementDialog: React.FC<ImageRefinementDialogProps> = ({
   imageUrl
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const isMobile = useMediaQuery("(max-width: 640px)");
+  const isMobile = useIsMobile();
 
   // If we don't have a suggestion but have an imageUrl, create a temporary suggestion object
   const chatSuggestion = suggestion || (imageUrl ? {
