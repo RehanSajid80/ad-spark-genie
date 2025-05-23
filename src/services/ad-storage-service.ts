@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -9,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
  * @param description Description for the saved image
  * @param platform Ad platform (e.g., 'linkedin', 'google')
  * @param prompt The prompt used to generate the image
+ * @param imageBase64 Optional base64 image data as fallback
  */
 export async function saveGeneratedAdImage(
   imageUrl: string,
@@ -16,32 +16,61 @@ export async function saveGeneratedAdImage(
   title: string,
   description: string,
   platform: string,
-  prompt?: string | null
+  prompt?: string | null,
+  imageBase64?: string | null
 ): Promise<{success: boolean; message: string; savedImageUrl?: string}> {
   try {
-    console.log(`Downloading image from URL: ${imageUrl}`);
+    console.log(`Attempting to save image for ad: ${adId}`);
     
-    // Step 1: Fetch the image from the URL with proper credentials
-    const imageResponse = await fetch(imageUrl, {
-      credentials: 'include',  // Include cookies and credentials
-      headers: {
-        // Add headers to help with cross-origin requests
-        'Accept': 'image/*',
-      },
-      mode: 'cors',  // Use CORS mode for cross-origin requests
-      cache: 'no-store', // Don't cache the request to avoid stale data
-    });
+    let imageBlob: Blob;
     
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch image: ${imageResponse.statusText} (${imageResponse.status})`);
+    // First try to use base64 data if available
+    if (imageBase64) {
+      console.log('Using provided base64 image data');
+      try {
+        const base64Data = imageBase64.includes('base64,') 
+          ? imageBase64.split('base64,')[1] 
+          : imageBase64;
+          
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        imageBlob = new Blob([bytes], { 
+          type: imageBase64.includes('data:') 
+            ? imageBase64.split(';')[0].split(':')[1] 
+            : 'image/png' 
+        });
+        
+        console.log('Successfully created blob from base64 data, size:', imageBlob.size);
+      } catch (base64Error) {
+        console.error('Error converting base64 to blob:', base64Error);
+        throw new Error('Failed to process base64 image data');
+      }
+    } else {
+      // Fallback to URL fetch
+      console.log(`Downloading image from URL: ${imageUrl}`);
+      
+      const imageResponse = await fetch(imageUrl, {
+        mode: 'cors',
+        cache: 'no-store',
+        headers: {
+          'Accept': 'image/*',
+        }
+      });
+      
+      if (!imageResponse.ok) {
+        throw new Error(`Failed to fetch image: ${imageResponse.statusText} (${imageResponse.status})`);
+      }
+      
+      imageBlob = await imageResponse.blob();
+      console.log(`Image downloaded, size: ${imageBlob.size} bytes, type: ${imageBlob.type}`);
     }
     
-    // Get the image as a blob
-    const imageBlob = await imageResponse.blob();
-    console.log(`Image downloaded, size: ${imageBlob.size} bytes, type: ${imageBlob.type}`);
-    
     if (imageBlob.size === 0) {
-      throw new Error("Downloaded image is empty (0 bytes)");
+      throw new Error("Image data is empty (0 bytes)");
     }
     
     // Generate a unique filename
@@ -52,7 +81,7 @@ export async function saveGeneratedAdImage(
     
     console.log(`Uploading to Supabase storage as: ${filename}`);
     
-    // Step 2: Upload the image to Supabase storage
+    // Upload the image to Supabase storage
     const { data: uploadData, error: uploadError } = await supabase
       .storage
       .from('generated-ad-images')
@@ -65,7 +94,7 @@ export async function saveGeneratedAdImage(
       throw new Error(`Storage upload failed: ${uploadError.message}`);
     }
     
-    // Step 3: Get the public URL for the uploaded image
+    // Get the public URL for the uploaded image
     const { data: { publicUrl } } = supabase
       .storage
       .from('generated-ad-images')
@@ -73,7 +102,7 @@ export async function saveGeneratedAdImage(
     
     console.log(`Image uploaded successfully, public URL: ${publicUrl}`);
     
-    // Step 4: Store record in the generated_images table
+    // Store record in the generated_images table
     const { error: dbError } = await supabase
       .from('generated_images')
       .insert([
