@@ -21,21 +21,34 @@ export async function saveGeneratedAdImage(
   try {
     console.log(`Downloading image from URL: ${imageUrl}`);
     
-    // Step 1: Fetch the image from the URL
-    const imageResponse = await fetch(imageUrl);
+    // Step 1: Fetch the image from the URL with proper credentials
+    const imageResponse = await fetch(imageUrl, {
+      credentials: 'include',  // Include cookies and credentials
+      headers: {
+        // Add headers to help with cross-origin requests
+        'Accept': 'image/*',
+      },
+      mode: 'cors',  // Use CORS mode for cross-origin requests
+      cache: 'no-store', // Don't cache the request to avoid stale data
+    });
+    
     if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+      throw new Error(`Failed to fetch image: ${imageResponse.statusText} (${imageResponse.status})`);
     }
     
     // Get the image as a blob
     const imageBlob = await imageResponse.blob();
-    console.log(`Image downloaded, size: ${imageBlob.size} bytes`);
+    console.log(`Image downloaded, size: ${imageBlob.size} bytes, type: ${imageBlob.type}`);
+    
+    if (imageBlob.size === 0) {
+      throw new Error("Downloaded image is empty (0 bytes)");
+    }
     
     // Generate a unique filename
     const timestamp = new Date().toISOString();
-    const fileExt = imageUrl.includes('.') ? imageUrl.split('.').pop() : 'png';
-    const sanitizedExt = fileExt?.includes('?') ? fileExt.split('?')[0] : fileExt;
-    const filename = `ad-${adId}-${timestamp}.${sanitizedExt || 'png'}`;
+    const fileExt = imageUrl.includes('.') ? imageUrl.split('.').pop()?.split('?')[0] : 'png';
+    const sanitizedExt = fileExt || 'png';
+    const filename = `ad-${adId}-${timestamp}.${sanitizedExt}`;
     
     console.log(`Uploading to Supabase storage as: ${filename}`);
     
@@ -44,7 +57,7 @@ export async function saveGeneratedAdImage(
       .storage
       .from('generated-ad-images')
       .upload(filename, imageBlob, {
-        contentType: imageBlob.type,
+        contentType: imageBlob.type || 'image/png',
         upsert: false
       });
     

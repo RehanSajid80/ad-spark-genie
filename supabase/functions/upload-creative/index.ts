@@ -45,30 +45,69 @@ serve(async (req) => {
       );
     }
 
-    const { imageUrl, filename } = requestBody;
+    const { imageUrl, filename, imageBase64 } = requestBody;
 
-    if (!imageUrl || !filename) {
-      console.error('Missing required fields:', { imageUrl: !!imageUrl, filename: !!filename });
-      throw new Error('Image URL and filename are required');
-    }
-
-    console.log('Fetching image from URL:', imageUrl);
-    // Download the image from the URL
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      console.error('Failed to fetch image, status:', imageResponse.status, 'statusText:', imageResponse.statusText);
-      throw new Error(`Failed to fetch image from URL: ${imageResponse.status} ${imageResponse.statusText}`);
-    }
-
-    const imageBlob = await imageResponse.blob();
-    console.log('Image blob size:', imageBlob.size, 'bytes, type:', imageBlob.type);
+    let imageBlob;
     
-    if (imageBlob.size === 0) {
-      throw new Error('Image blob is empty');
+    // First try to use the provided base64 image if available
+    if (imageBase64) {
+      console.log('Using provided base64 image data');
+      try {
+        // Extract the base64 data (remove the data:image/png;base64, prefix if present)
+        const base64Data = imageBase64.includes('base64,') 
+          ? imageBase64.split('base64,')[1] 
+          : imageBase64;
+          
+        // Convert base64 to Uint8Array
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        // Create blob from the array
+        imageBlob = new Blob([bytes], { 
+          type: imageBase64.includes('data:') 
+            ? imageBase64.split(';')[0].split(':')[1] 
+            : 'image/png' 
+        });
+        
+        console.log('Successfully created blob from base64 data, size:', imageBlob.size);
+      } catch (error) {
+        console.error('Error converting base64 to blob:', error);
+        // Continue with URL fetch as fallback
+      }
+    }
+
+    // If we don't have a blob from base64, try to fetch from URL
+    if (!imageBlob && imageUrl) {
+      if (!imageUrl) {
+        throw new Error('Either image URL or base64 data is required');
+      }
+
+      console.log('Fetching image from URL:', imageUrl);
+      // Download the image from the URL
+      const imageResponse = await fetch(imageUrl, {
+        headers: {
+          'Accept': 'image/*',
+        },
+      });
+      
+      if (!imageResponse.ok) {
+        console.error('Failed to fetch image, status:', imageResponse.status, 'statusText:', imageResponse.statusText);
+        throw new Error(`Failed to fetch image from URL: ${imageResponse.status} ${imageResponse.statusText}`);
+      }
+
+      imageBlob = await imageResponse.blob();
+      console.log('Image blob size:', imageBlob.size, 'bytes, type:', imageBlob.type);
+    }
+    
+    if (!imageBlob || imageBlob.size === 0) {
+      throw new Error('Failed to obtain valid image data');
     }
 
     const timestamp = new Date().toISOString();
-    const uniqueFilename = `${timestamp}-${filename}`;
+    const uniqueFilename = filename ? `${timestamp}-${filename}` : `${timestamp}-image.png`;
     console.log('Generated unique filename:', uniqueFilename);
 
     // Log all available buckets

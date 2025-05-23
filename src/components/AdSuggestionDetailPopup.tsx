@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { AdSuggestion } from '@/types/ad-types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,64 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
   suggestion
 }) => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (suggestion?.generatedImageUrl && isOpen) {
+      // Try to convert image to base64 when the dialog opens and an image is available
+      convertImageToBase64(suggestion.generatedImageUrl);
+    }
+  }, [suggestion?.generatedImageUrl, isOpen]);
+  
+  const convertImageToBase64 = async (url: string) => {
+    try {
+      // Create an image element
+      const img = new Image();
+      img.crossOrigin = 'anonymous'; // Try to avoid CORS issues
+      
+      // Set up promise to handle image load
+      const imageLoadPromise = new Promise<string>((resolve, reject) => {
+        img.onload = () => {
+          try {
+            // Create canvas to draw the image
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            // Draw image on canvas
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              reject(new Error('Could not get 2D context'));
+              return;
+            }
+            
+            ctx.drawImage(img, 0, 0);
+            
+            // Get base64 data
+            const dataUrl = canvas.toDataURL('image/png');
+            resolve(dataUrl);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        
+        img.onerror = () => {
+          reject(new Error('Failed to load image'));
+        };
+      });
+      
+      // Set source to start loading
+      img.src = url;
+      
+      // Wait for image to load or error
+      const base64Data = await imageLoadPromise;
+      setImageBase64(base64Data);
+      console.log('Image successfully converted to base64');
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      // We'll continue without the base64 data
+    }
+  };
   
   if (!suggestion) {
     return null;
@@ -34,6 +93,12 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
     setIsSaving(true);
     
     try {
+      console.log('Saving ad with image URL:', suggestion.generatedImageUrl);
+      if (imageBase64) {
+        console.log('Using base64 data as backup');
+      }
+      
+      // Try direct URL first, fall back to edge function with base64 if needed
       const result = await saveGeneratedAdImage(
         suggestion.generatedImageUrl,
         suggestion.id,
@@ -46,7 +111,46 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
       if (result.success) {
         toast.success(result.message);
       } else {
-        toast.error(result.message);
+        // If direct method fails and we have base64 data, try upload via edge function
+        if (imageBase64 && result.message.includes('Failed to fetch image')) {
+          toast.info('Trying alternative upload method...');
+          
+          // Call to edge function with base64 data
+          const response = await fetch('/api/upload-creative', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              imageBase64,
+              filename: `ad-${suggestion.id}.png`,
+            }),
+          });
+          
+          const edgeResult = await response.json();
+          
+          if (edgeResult.success && edgeResult.url) {
+            // Store the result in database
+            const finalResult = await saveGeneratedAdImage(
+              edgeResult.url, // Use the new permanent URL
+              suggestion.id,
+              suggestion.headline,
+              suggestion.description,
+              suggestion.platform,
+              suggestion.revisedPrompt
+            );
+            
+            if (finalResult.success) {
+              toast.success('Ad saved successfully using alternative method');
+            } else {
+              toast.error(finalResult.message);
+            }
+          } else {
+            toast.error('Alternative upload method failed');
+          }
+        } else {
+          toast.error(result.message);
+        }
       }
     } catch (error) {
       console.error('Error saving ad:', error);
@@ -91,6 +195,7 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
                     src={suggestion.generatedImageUrl} 
                     alt="Generated ad" 
                     className="w-full rounded-md border shadow-sm"
+                    crossOrigin="anonymous"
                   />
                   <p className="text-xs text-muted-foreground mt-2">
                     Dimensions: {suggestion.dimensions}
