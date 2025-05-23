@@ -35,6 +35,41 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
         
         <ScrollArea className="h-[60vh] max-h-[500px] pr-4">
           <div className="space-y-6 py-2">
+            {/* Headline */}
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-1">Headline</h3>
+              <p className="text-lg font-medium">{suggestion.headline}</p>
+            </div>
+            
+            {/* Description */}
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
+              <p>{suggestion.description}</p>
+            </div>
+            
+            {/* Image */}
+            {suggestion.generatedImageUrl && (
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Generated Image</h3>
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  <img 
+                    src={suggestion.generatedImageUrl} 
+                    alt="Generated ad" 
+                    className="w-full rounded-md border shadow-sm"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Dimensions: {suggestion.dimensions}
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Image Recommendation */}
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-1">Image Recommendation</h3>
+              <p>{suggestion.imageRecommendation}</p>
+            </div>
+
             {/* Content */}
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-1">Content</h3>
@@ -111,41 +146,6 @@ By following this structure and ensuring all security measures are in place, you
                 <p className="text-sm italic bg-muted p-3 rounded-md">{suggestion.revisedPrompt}</p>
               </div>
             )}
-
-            {/* Headline */}
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-1">Headline</h3>
-              <p className="text-lg font-medium">{suggestion.headline}</p>
-            </div>
-            
-            {/* Description */}
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
-              <p>{suggestion.description}</p>
-            </div>
-            
-            {/* Image */}
-            {suggestion.generatedImageUrl && (
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">Generated Image</h3>
-                <div className="bg-muted/30 p-4 rounded-lg">
-                  <img 
-                    src={suggestion.generatedImageUrl} 
-                    alt="Generated ad" 
-                    className="w-full rounded-md border shadow-sm"
-                  />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Dimensions: {suggestion.dimensions}
-                  </p>
-                </div>
-              </div>
-            )}
-            
-            {/* Image Recommendation */}
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-1">Image Recommendation</h3>
-              <p>{suggestion.imageRecommendation}</p>
-            </div>
           </div>
         </ScrollArea>
         
