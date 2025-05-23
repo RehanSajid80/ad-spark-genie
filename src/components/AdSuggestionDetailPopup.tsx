@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AdSuggestion } from '@/types/ad-types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -6,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { saveGeneratedAdImage } from '@/services/ad-storage-service';
 import { toast } from 'sonner';
-import { Loader2, Save, ExternalLink } from 'lucide-react';
+import { Loader2, Save, ExternalLink, AlertTriangle } from 'lucide-react';
 
 interface AdSuggestionDetailPopupProps {
   isOpen: boolean;
@@ -22,16 +23,55 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [imageLoadError, setImageLoadError] = useState<boolean>(false);
+  const [isImageLoading, setIsImageLoading] = useState<boolean>(true);
   
   useEffect(() => {
     if (suggestion?.generatedImageUrl && isOpen) {
       setImageLoadError(false);
+      setIsImageLoading(true);
       convertImageToBase64(suggestion.generatedImageUrl);
     }
   }, [suggestion?.generatedImageUrl, isOpen]);
   
   const convertImageToBase64 = async (url: string) => {
     try {
+      console.log('Converting image to base64:', url);
+      
+      // First try direct fetch approach
+      try {
+        const response = await fetch(url, {
+          mode: 'cors',
+          cache: 'no-store',
+          headers: {
+            'Accept': 'image/*',
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+        }
+        
+        const blob = await response.blob();
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            setImageBase64(e.target.result as string);
+            setIsImageLoading(false);
+          }
+        };
+        
+        reader.onerror = () => {
+          throw new Error('Failed to convert blob to base64');
+        };
+        
+        reader.readAsDataURL(blob);
+        return;
+      } catch (fetchError) {
+        console.warn('Direct fetch approach failed, trying Image object:', fetchError);
+      }
+      
+      // Fallback to Image object approach
       const img = new Image();
       img.crossOrigin = 'anonymous';
       
@@ -64,10 +104,12 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
       img.src = url;
       const base64Data = await imageLoadPromise;
       setImageBase64(base64Data);
+      setIsImageLoading(false);
       console.log('Image successfully converted to base64');
     } catch (error) {
       console.error('Error converting image to base64:', error);
       setImageLoadError(true);
+      setIsImageLoading(false);
     }
   };
   
@@ -142,10 +184,37 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-1">Generated Image</h3>
                 <div className="bg-muted/30 p-4 rounded-lg">
-                  {imageLoadError ? (
+                  {isImageLoading ? (
                     <div className="w-full h-48 bg-muted rounded-md border border-dashed border-border flex items-center justify-center">
-                      <p className="text-sm text-muted-foreground">Image failed to load</p>
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      <p className="ml-2 text-sm text-muted-foreground">Loading image...</p>
                     </div>
+                  ) : imageLoadError ? (
+                    <div className="w-full h-48 bg-muted rounded-md border border-dashed border-border flex flex-col items-center justify-center p-4">
+                      <AlertTriangle className="h-8 w-8 text-amber-500 mb-2" />
+                      <p className="text-sm text-muted-foreground text-center">Image failed to load</p>
+                      <p className="text-xs text-muted-foreground mt-1 text-center">
+                        The image might be unavailable or there could be a temporary issue
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-3"
+                        onClick={() => {
+                          setImageLoadError(false);
+                          setIsImageLoading(true);
+                          convertImageToBase64(suggestion.generatedImageUrl!);
+                        }}
+                      >
+                        Retry Loading
+                      </Button>
+                    </div>
+                  ) : imageBase64 ? (
+                    <img 
+                      src={imageBase64} 
+                      alt="Generated ad" 
+                      className="w-full rounded-md border shadow-sm"
+                    />
                   ) : (
                     <img 
                       src={suggestion.generatedImageUrl} 
@@ -257,7 +326,7 @@ By following this structure and ensuring all security measures are in place, you
               <Button 
                 variant="default" 
                 onClick={handleSaveAd} 
-                disabled={isSaving || (!imageBase64 && imageLoadError)}
+                disabled={isSaving || (isImageLoading && !imageBase64)}
                 className="w-full sm:w-auto"
               >
                 {isSaving ? (
@@ -276,7 +345,15 @@ By following this structure and ensuring all security measures are in place, you
               <Button 
                 variant="secondary"
                 onClick={() => {
-                  window.open(suggestion.generatedImageUrl, '_blank');
+                  if (imageBase64) {
+                    // Open base64 image in new tab
+                    const win = window.open();
+                    if (win) {
+                      win.document.write(`<img src="${imageBase64}" alt="Generated ad image" />`);
+                    }
+                  } else {
+                    window.open(suggestion.generatedImageUrl, '_blank');
+                  }
                 }}
                 className="hidden sm:flex"
               >

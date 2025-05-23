@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -53,23 +54,29 @@ export async function saveGeneratedAdImage(
       // Fallback to URL fetch
       console.log(`Downloading image from URL: ${imageUrl}`);
       
-      const imageResponse = await fetch(imageUrl, {
-        mode: 'cors',
-        cache: 'no-store',
-        headers: {
-          'Accept': 'image/*',
+      try {
+        const imageResponse = await fetch(imageUrl, {
+          mode: 'cors',
+          cache: 'no-store',
+          headers: {
+            'Accept': 'image/*',
+          },
+          referrerPolicy: 'no-referrer'
+        });
+        
+        if (!imageResponse.ok) {
+          throw new Error(`Failed to fetch image: ${imageResponse.statusText} (${imageResponse.status})`);
         }
-      });
-      
-      if (!imageResponse.ok) {
-        throw new Error(`Failed to fetch image: ${imageResponse.statusText} (${imageResponse.status})`);
+        
+        imageBlob = await imageResponse.blob();
+        console.log(`Image downloaded, size: ${imageBlob.size} bytes, type: ${imageBlob.type}`);
+      } catch (fetchError) {
+        console.error('Error fetching image from URL:', fetchError);
+        throw new Error(`Failed to fetch image: ${fetchError.message}`);
       }
-      
-      imageBlob = await imageResponse.blob();
-      console.log(`Image downloaded, size: ${imageBlob.size} bytes, type: ${imageBlob.type}`);
     }
     
-    if (imageBlob.size === 0) {
+    if (!imageBlob || imageBlob.size === 0) {
       throw new Error("Image data is empty (0 bytes)");
     }
     
