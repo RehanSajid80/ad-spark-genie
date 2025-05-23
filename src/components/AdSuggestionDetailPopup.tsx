@@ -35,17 +35,9 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
         
         <ScrollArea className="h-[60vh] max-h-[500px] pr-4">
           <div className="space-y-6 py-2">
-            {/* AI Prompt Used */}
-            {suggestion.revisedPrompt && (
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">AI Prompt Used</h3>
-                <p className="text-sm italic bg-muted p-3 rounded-md">{suggestion.revisedPrompt}</p>
-              </div>
-            )}
-
-            {/* Campaign Context */}
+            {/* Content */}
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-1">Campaign Context</h3>
+              <h3 className="text-sm font-medium text-muted-foreground mb-1">Content</h3>
               <div className="bg-muted/50 p-4 rounded-lg border max-h-60 overflow-y-auto">
                 <div className="text-sm whitespace-pre-wrap">
                   {`## SEO-Optimized Content for Supabase Database Security
@@ -111,6 +103,14 @@ By following this structure and ensuring all security measures are in place, you
                 </div>
               </div>
             </div>
+
+            {/* AI Prompt Used */}
+            {suggestion.revisedPrompt && (
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">AI Prompt Used</h3>
+                <p className="text-sm italic bg-muted p-3 rounded-md">{suggestion.revisedPrompt}</p>
+              </div>
+            )}
 
             {/* Headline */}
             <div>
