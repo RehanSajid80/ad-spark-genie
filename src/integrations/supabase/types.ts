@@ -97,32 +97,47 @@ export type Database = {
         Row: {
           chat_message: string | null
           created_at: string
+          description: string | null
           id: string
           image_url: string
           metadata: Json | null
+          permanent_image_url: string | null
           platform: string | null
           prompt: string | null
+          saved_at: string | null
+          storage_path: string | null
           suggestion_id: string | null
+          title: string | null
         }
         Insert: {
           chat_message?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           image_url: string
           metadata?: Json | null
+          permanent_image_url?: string | null
           platform?: string | null
           prompt?: string | null
+          saved_at?: string | null
+          storage_path?: string | null
           suggestion_id?: string | null
+          title?: string | null
         }
         Update: {
           chat_message?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           image_url?: string
           metadata?: Json | null
+          permanent_image_url?: string | null
           platform?: string | null
           prompt?: string | null
+          saved_at?: string | null
+          storage_path?: string | null
           suggestion_id?: string | null
+          title?: string | null
         }
         Relationships: []
       }

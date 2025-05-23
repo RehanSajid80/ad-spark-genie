@@ -1,10 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AdSuggestion } from '@/types/ad-types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { saveGeneratedAdImage } from '@/services/ad-storage-service';
+import { toast } from 'sonner';
+import { Loader2, Save } from 'lucide-react';
 
 interface AdSuggestionDetailPopupProps {
   isOpen: boolean;
@@ -17,9 +20,42 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
   onOpenChange,
   suggestion
 }) => {
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  
   if (!suggestion) {
     return null;
   }
+
+  const handleSaveAd = async () => {
+    if (!suggestion || !suggestion.generatedImageUrl) {
+      toast.error('No image available to save');
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      const result = await saveGeneratedAdImage(
+        suggestion.generatedImageUrl,
+        suggestion.id,
+        suggestion.headline,
+        suggestion.description,
+        suggestion.platform,
+        suggestion.revisedPrompt
+      );
+      
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      console.error('Error saving ad:', error);
+      toast.error('Failed to save the ad image');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -149,8 +185,45 @@ By following this structure and ensuring all security measures are in place, you
           </div>
         </ScrollArea>
         
-        <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Close</Button>
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between">
+          <div className="flex gap-2 order-last sm:order-first">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+          </div>
+          
+          {suggestion.generatedImageUrl && (
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button 
+                variant="default" 
+                onClick={handleSaveAd} 
+                disabled={isSaving}
+                className="w-full sm:w-auto"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Ad Permanently
+                  </>
+                )}
+              </Button>
+              
+              <Button 
+                variant="secondary"
+                onClick={() => {
+                  // Open image in new tab for manual saving
+                  window.open(suggestion.generatedImageUrl, '_blank');
+                }}
+                className="hidden sm:flex"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open Image
+              </Button>
+            </div>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
