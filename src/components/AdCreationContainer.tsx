@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AdSuggestion, AdInput, ChatMessage } from '@/types/ad-types';
 import AdForm from '@/components/AdForm';
@@ -63,7 +64,7 @@ const AdCreationContainer: React.FC<AdCreationContainerProps> = ({
   };
   
   return (
-    <div className="container mx-auto px-4 py-8 pt-24">
+    <div className="container mx-auto px-4 py-8 pt-14">
       <h1 className="text-3xl font-bold mb-8 text-ad-gray-dark">Create Your Ad</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
