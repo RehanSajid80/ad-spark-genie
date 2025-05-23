@@ -35,6 +35,25 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
         
         <ScrollArea className="h-[60vh] max-h-[500px] pr-4">
           <div className="space-y-6 py-2">
+            {/* Campaign Context */}
+            <div className="bg-muted/50 p-4 rounded-lg border">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">Campaign Context</h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Content Name</p>
+                  <p className="text-sm font-medium">{suggestion.headline} - {suggestion.platform.toUpperCase()} Campaign</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Campaign Type</p>
+                  <p className="text-sm">{suggestion.platform === 'linkedin' ? 'Professional Network Advertising' : 'Search Engine Marketing'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Content Format</p>
+                  <p className="text-sm">Visual Ad with Generated Image ({suggestion.dimensions})</p>
+                </div>
+              </div>
+            </div>
+
             {/* Headline */}
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-1">Headline</h3>
