@@ -35,21 +35,31 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
         
         <ScrollArea className="h-[60vh] max-h-[500px] pr-4">
           <div className="space-y-6 py-2">
+            {/* AI Prompt Used */}
+            {suggestion.revisedPrompt && (
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">AI Prompt Used</h3>
+                <p className="text-sm italic bg-muted p-3 rounded-md">{suggestion.revisedPrompt}</p>
+              </div>
+            )}
+
             {/* Campaign Context */}
-            <div className="bg-muted/50 p-4 rounded-lg border">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">Campaign Context</h3>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Content Name</p>
-                  <p className="text-sm font-medium">{suggestion.headline} - {suggestion.platform.toUpperCase()} Campaign</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Campaign Type</p>
-                  <p className="text-sm">{suggestion.platform === 'linkedin' ? 'Professional Network Advertising' : 'Search Engine Marketing'}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Content Format</p>
-                  <p className="text-sm">Visual Ad with Generated Image ({suggestion.dimensions})</p>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-1">Campaign Context</h3>
+              <div className="bg-muted/50 p-4 rounded-lg border">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Content Name</p>
+                    <p className="text-sm font-medium">{suggestion.headline} - {suggestion.platform.toUpperCase()} Campaign</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Campaign Type</p>
+                    <p className="text-sm">{suggestion.platform === 'linkedin' ? 'Professional Network Advertising' : 'Search Engine Marketing'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Content Format</p>
+                    <p className="text-sm">Visual Ad with Generated Image ({suggestion.dimensions})</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -88,14 +98,6 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
               <h3 className="text-sm font-medium text-muted-foreground mb-1">Image Recommendation</h3>
               <p>{suggestion.imageRecommendation}</p>
             </div>
-            
-            {/* Revised Prompt (if available) */}
-            {suggestion.revisedPrompt && (
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">AI Prompt Used</h3>
-                <p className="text-sm italic bg-muted p-3 rounded-md">{suggestion.revisedPrompt}</p>
-              </div>
-            )}
           </div>
         </ScrollArea>
         
