@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AdSuggestion } from '@/types/ad-types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -7,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { saveGeneratedAdImage } from '@/services/ad-storage-service';
 import { toast } from 'sonner';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, ExternalLink } from 'lucide-react';
 
 interface AdSuggestionDetailPopupProps {
   isOpen: boolean;

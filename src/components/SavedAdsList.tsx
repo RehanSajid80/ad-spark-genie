@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getSavedAdImages } from '@/services/ad-storage-service';
 import { Badge } from './ui/badge';
 import { Skeleton } from './ui/skeleton';
+import { ExternalLink } from 'lucide-react';
 
 const SavedAdsList = () => {
   const [savedAds, setSavedAds] = useState<any[]>([]);
