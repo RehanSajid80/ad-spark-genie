@@ -22,34 +22,22 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [imageError, setImageError] = useState<boolean>(false);
   const [isImageLoading, setIsImageLoading] = useState<boolean>(true);
-  const [imageUrl, setImageUrl] = useState<string>('');
   
   useEffect(() => {
     if (suggestion?.generatedImageUrl && isOpen) {
       setImageError(false);
       setIsImageLoading(true);
-      setImageUrl('');
       
-      // Create a proxy URL to handle CORS issues
-      const proxyUrl = suggestion.generatedImageUrl;
+      // Reset on new popup open
+      const timeoutId = setTimeout(() => {
+        // After a short delay, consider the image loaded if no error
+        // This helps in cases where the image loads but the event doesn't fire
+        if (isImageLoading) {
+          setIsImageLoading(false);
+        }
+      }, 3000);
       
-      // Test if image loads
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      img.onload = () => {
-        setImageUrl(proxyUrl);
-        setIsImageLoading(false);
-        setImageError(false);
-      };
-      
-      img.onerror = () => {
-        console.error('Failed to load image:', suggestion.generatedImageUrl);
-        setImageError(true);
-        setIsImageLoading(false);
-      };
-      
-      img.src = proxyUrl;
+      return () => clearTimeout(timeoutId);
     }
   }, [suggestion?.generatedImageUrl, isOpen]);
   
@@ -92,28 +80,9 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
     }
   };
 
-  const handleRetryImage = () => {
+  const handleOpenImage = () => {
     if (suggestion?.generatedImageUrl) {
-      setImageError(false);
-      setIsImageLoading(true);
-      setImageUrl('');
-      
-      // Force reload by adding timestamp
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      img.onload = () => {
-        setImageUrl(suggestion.generatedImageUrl);
-        setIsImageLoading(false);
-        setImageError(false);
-      };
-      
-      img.onerror = () => {
-        setImageError(true);
-        setIsImageLoading(false);
-      };
-      
-      img.src = `${suggestion.generatedImageUrl}?t=${Date.now()}`;
+      window.open(suggestion.generatedImageUrl, '_blank');
     }
   };
 
@@ -156,39 +125,43 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
                   ) : imageError ? (
                     <div className="w-full h-48 bg-muted rounded-md border border-dashed border-border flex flex-col items-center justify-center p-4">
                       <AlertTriangle className="h-8 w-8 text-amber-500 mb-2" />
-                      <p className="text-sm text-muted-foreground text-center mb-2">Failed to load image</p>
-                      <p className="text-xs text-muted-foreground text-center mb-3">
-                        The image may have CORS restrictions or connectivity issues
-                      </p>
+                      <p className="text-sm text-muted-foreground text-center mb-2">Unable to display image directly</p>
                       <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handleRetryImage}
+                        variant="default" 
+                        size="sm"
+                        onClick={handleOpenImage}
                         className="mb-2"
                       >
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Retry Loading
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => window.open(suggestion.generatedImageUrl, '_blank')}
-                      >
                         <ExternalLink className="h-4 w-4 mr-2" />
-                        Open in New Tab
+                        Open Image in New Tab
                       </Button>
                     </div>
-                  ) : imageUrl ? (
-                    <img 
-                      src={imageUrl} 
-                      alt="Generated ad" 
-                      className="w-full rounded-md border shadow-sm"
-                      onError={() => setImageError(true)}
-                    />
-                  ) : null}
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Dimensions: {suggestion.dimensions}
-                  </p>
+                  ) : (
+                    <div>
+                      <div className="relative">
+                        <img 
+                          src={suggestion.generatedImageUrl} 
+                          alt="Generated ad" 
+                          className="w-full rounded-md border shadow-sm"
+                          onError={() => setImageError(true)}
+                          onLoad={() => setIsImageLoading(false)}
+                          crossOrigin="anonymous"
+                          referrerPolicy="no-referrer"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+                          onClick={handleOpenImage}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Dimensions: {suggestion.dimensions}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -306,7 +279,7 @@ By following this structure and ensuring all security measures are in place, you
               
               <Button 
                 variant="secondary"
-                onClick={() => window.open(suggestion.generatedImageUrl, '_blank')}
+                onClick={handleOpenImage}
                 className="hidden sm:flex"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />

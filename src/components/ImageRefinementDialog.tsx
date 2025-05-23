@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { AdSuggestion, ChatMessage } from '@/types/ad-types';
 import ChatBox from './ChatBox';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Maximize, Minimize, X, Image } from 'lucide-react';
+import { Maximize, Minimize, X, Image, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -50,6 +50,12 @@ const ImageRefinementDialog: React.FC<ImageRefinementDialogProps> = ({
   const toggleDialogSize = () => {
     setIsExpanded(!isExpanded);
   };
+  
+  const handleOpenImage = () => {
+    if (chatSuggestion?.generatedImageUrl) {
+      window.open(chatSuggestion.generatedImageUrl, '_blank');
+    }
+  };
 
   console.log("ImageRefinementDialog rendering with isOpen:", isOpen);
 
@@ -82,11 +88,23 @@ const ImageRefinementDialog: React.FC<ImageRefinementDialogProps> = ({
             <ScrollArea className="flex-grow p-4 max-h-[200px]">
               {chatSuggestion.generatedImageUrl && (
                 <div className="bg-muted/30 p-4 rounded-lg mb-4">
-                  <img 
-                    src={chatSuggestion.generatedImageUrl} 
-                    alt="Image to refine" 
-                    className="w-full rounded-md border shadow-sm"
-                  />
+                  <div className="relative">
+                    <img 
+                      src={chatSuggestion.generatedImageUrl} 
+                      alt="Image to refine" 
+                      className="w-full rounded-md border shadow-sm"
+                      crossOrigin="anonymous"
+                      referrerPolicy="no-referrer"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+                      onClick={handleOpenImage}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <p className="text-xs text-muted-foreground mt-2">
                     Dimensions: {chatSuggestion.dimensions}
                   </p>
@@ -154,11 +172,23 @@ const ImageRefinementDialog: React.FC<ImageRefinementDialogProps> = ({
             <div className="space-y-4">
               {chatSuggestion.generatedImageUrl && (
                 <div className="bg-muted/30 p-4 rounded-lg">
-                  <img 
-                    src={chatSuggestion.generatedImageUrl} 
-                    alt="Image to refine" 
-                    className="w-full rounded-md border shadow-sm"
-                  />
+                  <div className="relative">
+                    <img 
+                      src={chatSuggestion.generatedImageUrl} 
+                      alt="Image to refine" 
+                      className="w-full rounded-md border shadow-sm"
+                      crossOrigin="anonymous"
+                      referrerPolicy="no-referrer"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+                      onClick={handleOpenImage}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <p className="text-xs text-muted-foreground mt-2">
                     Dimensions: {chatSuggestion.dimensions}
                   </p>
