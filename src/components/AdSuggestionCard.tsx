@@ -89,40 +89,28 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
     setIsDownloading(true);
     
     try {
-      // Fetch the image
-      const response = await fetch(generatedImageUrl, {
-        mode: 'cors',
-        credentials: 'omit',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch image');
-      }
-      
-      const blob = await response.blob();
-      
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
+      // Try to create a direct download link first
       const link = document.createElement('a');
-      link.href = url;
+      link.href = generatedImageUrl;
+      link.target = '_blank';
       
       // Generate filename
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
       const filename = `ad-image-${platform}-${timestamp}.png`;
       link.download = filename;
       
-      // Trigger download
+      // For CORS-restricted images, this will open in new tab instead of downloading
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      // Clean up
-      window.URL.revokeObjectURL(url);
-      
-      toast.success('Image downloaded successfully');
+      // Show appropriate message
+      toast.success('Image opened in new tab. Right-click and select "Save image as..." to download.');
     } catch (error) {
       console.error('Error downloading image:', error);
-      toast.error('Failed to download image. Please try opening the image in a new tab and saving it manually.');
+      // Fallback: open image in new tab
+      window.open(generatedImageUrl, '_blank');
+      toast.info('Image opened in new tab. Right-click and select "Save image as..." to download.');
     } finally {
       setIsDownloading(false);
     }
@@ -251,7 +239,7 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
             disabled={isDownloading}
           >
             <Download className="h-4 w-4 mr-2" />
-            {isDownloading ? 'Downloading...' : 'Download Image'}
+            {isDownloading ? 'Opening...' : 'Download Image'}
           </Button>
         )}
         
