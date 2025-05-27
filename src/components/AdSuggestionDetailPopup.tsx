@@ -148,68 +148,82 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Open Image in New Tab
                       </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleSelectImage}
+                        disabled={isImageSelected}
+                      >
+                        {isImageSelected ? (
+                          <>
+                            <Check className="h-4 w-4 mr-2" />
+                            Selected
+                          </>
+                        ) : (
+                          'Select Image'
+                        )}
+                      </Button>
                     </div>
                   ) : (
                     <div>
-                      {isImageSelected ? (
-                        <div className="relative">
-                          <img 
-                            src={suggestion.generatedImageUrl} 
-                            alt="Generated ad" 
-                            className="w-full rounded-md border shadow-sm"
-                            onError={() => setImageError(true)}
-                            onLoad={() => setIsImageLoading(false)}
-                            crossOrigin="anonymous"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="absolute top-2 left-2 bg-green-500 text-white p-2 rounded-full">
+                      <div className="relative">
+                        <img 
+                          src={suggestion.generatedImageUrl} 
+                          alt="Generated ad" 
+                          className={`w-full rounded-md border shadow-sm transition-all ${
+                            isImageSelected ? 'ring-2 ring-green-500 ring-offset-2' : ''
+                          }`}
+                          onError={() => setImageError(true)}
+                          onLoad={() => setIsImageLoading(false)}
+                          crossOrigin="anonymous"
+                          referrerPolicy="no-referrer"
+                        />
+                        
+                        {/* Selection overlay */}
+                        {isImageSelected && (
+                          <div className="absolute top-2 left-2 bg-green-500 text-white p-2 rounded-full shadow-md">
                             <Check className="h-4 w-4" />
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="absolute top-2 right-2 bg-white/80 hover:bg-white"
-                            onClick={handleOpenImage}
+                        )}
+                        
+                        {/* Open in new tab button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+                          onClick={handleOpenImage}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                        
+                        {/* Select button overlay when not selected */}
+                        {!isImageSelected && (
+                          <div 
+                            className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity rounded-md flex items-center justify-center cursor-pointer"
+                            onClick={handleSelectImage}
                           >
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="relative cursor-pointer group" onClick={handleSelectImage}>
-                          <img 
-                            src={suggestion.generatedImageUrl} 
-                            alt="Generated ad" 
-                            className="w-full rounded-md border shadow-sm transition-opacity group-hover:opacity-80"
-                            onError={() => setImageError(true)}
-                            onLoad={() => setIsImageLoading(false)}
-                            crossOrigin="anonymous"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
                             <Button variant="secondary" size="sm">
                               Select Image
                             </Button>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="absolute top-2 right-2 bg-white/80 hover:bg-white"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenImage();
-                            }}
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
+                      
                       <p className="text-xs text-muted-foreground mt-2">
                         Dimensions: {suggestion.dimensions}
                       </p>
-                      {!isImageSelected && (
+                      
+                      {!isImageSelected ? (
                         <p className="text-xs text-blue-600 mt-1">
                           Click on the image to select it for saving
                         </p>
+                      ) : (
+                        <div className="flex items-center gap-2 mt-2">
+                          <Check className="h-3 w-3 text-green-600" />
+                          <p className="text-xs text-green-600">
+                            Image selected and ready to save
+                          </p>
+                        </div>
                       )}
                     </div>
                   )}
