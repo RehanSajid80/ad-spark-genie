@@ -3,9 +3,10 @@ import { AdSuggestion } from '@/types/ad-types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ImageIcon, MessageSquare, ExternalLink } from 'lucide-react';
+import { ImageIcon, MessageSquare, ExternalLink, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import AdSuggestionDetailPopup from './AdSuggestionDetailPopup';
+import { toast } from 'sonner';
 
 interface AdSuggestionCardProps {
   suggestion: AdSuggestion;
@@ -39,6 +40,7 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Effect to update card image when generatedImageUrl changes
   useEffect(() => {
@@ -77,6 +79,54 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
     }
     return () => { ignore = true; };
   }, [isSelected, generatedImageUrl]);
+
+  const handleDownloadImage = async () => {
+    if (!generatedImageUrl) {
+      toast.error('No image available to download');
+      return;
+    }
+
+    setIsDownloading(true);
+    
+    try {
+      // Fetch the image
+      const response = await fetch(generatedImageUrl, {
+        mode: 'cors',
+        credentials: 'omit',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch image');
+      }
+      
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generate filename
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      const filename = `ad-image-${platform}-${timestamp}.png`;
+      link.download = filename;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Image downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      toast.error('Failed to download image. Please try opening the image in a new tab and saving it manually.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // Use the provided content from the suggestion
   const displayHeadline = headline;
@@ -192,6 +242,18 @@ const AdSuggestionCard: React.FC<AdSuggestionCardProps> = ({
           <ExternalLink className="h-4 w-4 mr-2" />
           View Details
         </Button>
+        
+        {generatedImageUrl && (
+          <Button 
+            variant="outline"
+            className="w-full"
+            onClick={handleDownloadImage}
+            disabled={isDownloading}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {isDownloading ? 'Downloading...' : 'Download Image'}
+          </Button>
+        )}
         
         {/* Details Popup */}
         <AdSuggestionDetailPopup 
