@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { saveGeneratedAdImage } from '@/services/ad-storage-service';
 import { toast } from 'sonner';
-import { Loader2, Save, ExternalLink, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Loader2, Save, ExternalLink, AlertTriangle, RefreshCw, Check } from 'lucide-react';
 
 interface AdSuggestionDetailPopupProps {
   isOpen: boolean;
@@ -23,11 +23,13 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [imageError, setImageError] = useState<boolean>(false);
   const [isImageLoading, setIsImageLoading] = useState<boolean>(true);
+  const [isImageSelected, setIsImageSelected] = useState<boolean>(false);
   
   useEffect(() => {
     if (suggestion?.generatedImageUrl && isOpen) {
       setImageError(false);
       setIsImageLoading(true);
+      setIsImageSelected(false); // Reset selection when popup opens
       
       // Reset on new popup open
       const timeoutId = setTimeout(() => {
@@ -46,9 +48,19 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
     return null;
   }
 
+  const handleSelectImage = () => {
+    setIsImageSelected(true);
+    toast.success('Image selected for saving');
+  };
+
   const handleSaveAd = async () => {
     if (!suggestion || !suggestion.generatedImageUrl) {
       toast.error('No image available to save');
+      return;
+    }
+
+    if (!isImageSelected) {
+      toast.error('Please select the image first');
       return;
     }
     
@@ -139,28 +151,66 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
                     </div>
                   ) : (
                     <div>
-                      <div className="relative">
-                        <img 
-                          src={suggestion.generatedImageUrl} 
-                          alt="Generated ad" 
-                          className="w-full rounded-md border shadow-sm"
-                          onError={() => setImageError(true)}
-                          onLoad={() => setIsImageLoading(false)}
-                          crossOrigin="anonymous"
-                          referrerPolicy="no-referrer"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="absolute top-2 right-2 bg-white/80 hover:bg-white"
-                          onClick={handleOpenImage}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {isImageSelected ? (
+                        <div className="relative">
+                          <img 
+                            src={suggestion.generatedImageUrl} 
+                            alt="Generated ad" 
+                            className="w-full rounded-md border shadow-sm"
+                            onError={() => setImageError(true)}
+                            onLoad={() => setIsImageLoading(false)}
+                            crossOrigin="anonymous"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="absolute top-2 left-2 bg-green-500 text-white p-2 rounded-full">
+                            <Check className="h-4 w-4" />
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+                            onClick={handleOpenImage}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="relative cursor-pointer group" onClick={handleSelectImage}>
+                          <img 
+                            src={suggestion.generatedImageUrl} 
+                            alt="Generated ad" 
+                            className="w-full rounded-md border shadow-sm transition-opacity group-hover:opacity-80"
+                            onError={() => setImageError(true)}
+                            onLoad={() => setIsImageLoading(false)}
+                            crossOrigin="anonymous"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                            <Button variant="secondary" size="sm">
+                              Select Image
+                            </Button>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenImage();
+                            }}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                       <p className="text-xs text-muted-foreground mt-2">
                         Dimensions: {suggestion.dimensions}
                       </p>
+                      {!isImageSelected && (
+                        <p className="text-xs text-blue-600 mt-1">
+                          Click on the image to select it for saving
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -260,9 +310,9 @@ By following this structure and ensuring all security measures are in place, you
           {suggestion.generatedImageUrl && (
             <div className="flex gap-2 w-full sm:w-auto">
               <Button 
-                variant="default" 
+                variant={isImageSelected ? "default" : "secondary"}
                 onClick={handleSaveAd} 
-                disabled={isSaving}
+                disabled={isSaving || !isImageSelected}
                 className="w-full sm:w-auto"
               >
                 {isSaving ? (
@@ -273,7 +323,7 @@ By following this structure and ensuring all security measures are in place, you
                 ) : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    Save Ad Permanently
+                    {isImageSelected ? 'Save Selected Ad' : 'Select Image First'}
                   </>
                 )}
               </Button>
