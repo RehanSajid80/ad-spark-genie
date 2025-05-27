@@ -1,18 +1,11 @@
 
-import React from 'react';
-import { AdInput, AdSuggestion, ChatMessage } from '@/types/ad-types';
-import AdForm from './AdForm';
-import AdSuggestionList from './AdSuggestionList';
-import ChatBox from './ChatBox';
-import ImageRefinementDialog from './ImageRefinementDialog';
-
-interface RefinementDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  messages: ChatMessage[];
-  onSendMessage: (content: string) => void;
-  isProcessing: boolean;
-}
+import React, { useState, useEffect } from 'react';
+import { AdSuggestion, AdInput, ChatMessage } from '@/types/ad-types';
+import AdForm from '@/components/AdForm';
+import AdSuggestionList from '@/components/AdSuggestionList';
+import ChatBox from '@/components/ChatBox';
+import ImageRefinementDialog from '@/components/ImageRefinementDialog';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface AdCreationContainerProps {
   adInput: AdInput;
@@ -23,12 +16,18 @@ interface AdCreationContainerProps {
   isUploading: boolean;
   isProcessing: boolean;
   isImageRefinementMode: boolean;
-  refinementDialogProps: RefinementDialogProps;
+  refinementDialogProps: {
+    isOpen: boolean;
+    onClose: () => void;
+    messages: ChatMessage[];
+    onSendMessage: (content: string) => void;
+    isProcessing: boolean;
+  };
   handlers: {
     handleInputChange: (field: keyof Omit<AdInput, 'image'>, value: string) => void;
     handleImageChange: (file: File | null) => void;
     handleSelectAndRefine: () => void;
-    generateAds: () => void;
+    generateAds: () => Promise<void>;
     setIsUploading: (isUploading: boolean) => void;
     handleSendMessage: (content: string) => void;
     setSelectedSuggestion: (suggestion: AdSuggestion | null) => void;
@@ -47,55 +46,81 @@ const AdCreationContainer: React.FC<AdCreationContainerProps> = ({
   refinementDialogProps,
   handlers
 }) => {
+  const [isChatPopupOpen, setIsChatPopupOpen] = useState(false);
+  
+  // Reset chat popup state when selectedSuggestion changes
+  useEffect(() => {
+    if (selectedSuggestion) {
+      setIsChatPopupOpen(true);
+    }
+  }, [selectedSuggestion]);
+  
+  const openChatPopup = () => {
+    setIsChatPopupOpen(true);
+  };
+  
+  const closeChatPopup = () => {
+    setIsChatPopupOpen(false);
+  };
+  
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Ad Form */}
-        <div className="lg:col-span-1">
-          <AdForm
-            adInput={adInput}
-            onInputChange={handlers.handleInputChange}
-            onImageChange={handlers.handleImageChange}
-            onSelectAndRefine={handlers.handleSelectAndRefine}
-            onGenerateAds={handlers.generateAds}
-            isGenerating={isGenerating}
-            isUploading={isUploading}
-            setIsUploading={handlers.setIsUploading}
-          />
-        </div>
-
-        {/* Right Column - Suggestions and Chat */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Ad Suggestions */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Generated Ad Suggestions</h2>
+    <div className="container mx-auto px-4 py-8 pt-14">
+      <h1 className="text-3xl font-bold mb-8 text-ad-gray-dark">Create Your Ad</h1>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left panel - Ad Form */}
+        <Card className="shadow-md border border-border bg-background">
+          <CardHeader className="pb-4 bg-muted/40">
+            <CardTitle className="text-xl font-semibold">Create Your Ad</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <AdForm 
+              adInput={adInput}
+              handleInputChange={handlers.handleInputChange}
+              handleImageChange={handlers.handleImageChange}
+              generateAds={handlers.generateAds}
+              isGenerating={isGenerating}
+              isUploading={isUploading}
+              setIsUploading={handlers.setIsUploading}
+              onSelectAndRefine={handlers.handleSelectAndRefine}
+              isImageRefinementMode={isImageRefinementMode}
+              openChatPopup={openChatPopup}
+            />
+          </CardContent>
+        </Card>
+        
+        {/* Right panel - Suggestions */}
+        <Card className="shadow-md border border-border bg-background">
+          <CardHeader className="pb-4 bg-muted/40">
+            <CardTitle className="text-xl font-semibold">Ad Suggestions</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
             <AdSuggestionList 
               suggestions={suggestions} 
-              onSelectSuggestion={handlers.setSelectedSuggestion}
-              uploadedImage={adInput.image}
+              selectedSuggestion={selectedSuggestion}
+              onSelect={handlers.setSelectedSuggestion}
             />
-          </div>
-
-          {/* Chat Interface */}
-          {selectedSuggestion && (
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Refine Selected Ad</h2>
-              <ChatBox
-                suggestion={selectedSuggestion}
-                messages={messages}
-                onSendMessage={handlers.handleSendMessage}
-                isProcessing={isProcessing}
-              />
-            </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Chat Popup */}
+      {selectedSuggestion && (
+        <ChatBox 
+          suggestion={selectedSuggestion}
+          messages={messages}
+          onSendMessage={handlers.handleSendMessage}
+          isProcessing={isProcessing}
+          isPopup={isChatPopupOpen}
+          onClosePopup={closeChatPopup}
+        />
+      )}
 
       {/* Image Refinement Dialog */}
       <ImageRefinementDialog
         isOpen={refinementDialogProps.isOpen}
         onClose={refinementDialogProps.onClose}
-        suggestion={selectedSuggestion}
+        suggestion={null}
         messages={refinementDialogProps.messages}
         onSendMessage={refinementDialogProps.onSendMessage}
         isProcessing={refinementDialogProps.isProcessing}

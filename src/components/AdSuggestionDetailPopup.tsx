@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AdSuggestion } from '@/types/ad-types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -12,42 +13,36 @@ interface AdSuggestionDetailPopupProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   suggestion: AdSuggestion | null;
-  uploadedImage?: File | null;
 }
 
 const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
   isOpen,
   onOpenChange,
-  suggestion,
-  uploadedImage
+  suggestion
 }) => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [imageError, setImageError] = useState<boolean>(false);
   const [isImageLoading, setIsImageLoading] = useState<boolean>(true);
   const [isImageSelected, setIsImageSelected] = useState<boolean>(false);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   
   useEffect(() => {
-    if (uploadedImage && isOpen) {
+    if (suggestion?.generatedImageUrl && isOpen) {
       setImageError(false);
       setIsImageLoading(true);
-      setIsImageSelected(false);
+      setIsImageSelected(false); // Reset selection when popup opens
       
-      // Create URL for uploaded image
-      const imageUrl = URL.createObjectURL(uploadedImage);
-      setUploadedImageUrl(imageUrl);
-      setIsImageLoading(false);
-      
-      return () => {
-        if (imageUrl) {
-          URL.revokeObjectURL(imageUrl);
+      // Reset on new popup open
+      const timeoutId = setTimeout(() => {
+        // After a short delay, consider the image loaded if no error
+        // This helps in cases where the image loads but the event doesn't fire
+        if (isImageLoading) {
+          setIsImageLoading(false);
         }
-      };
-    } else if (!uploadedImage) {
-      setUploadedImageUrl(null);
-      setIsImageLoading(false);
+      }, 3000);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [uploadedImage, isOpen]);
+  }, [suggestion?.generatedImageUrl, isOpen]);
   
   if (!suggestion) {
     return null;
@@ -59,8 +54,8 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
   };
 
   const handleSaveAd = async () => {
-    if (!uploadedImageUrl || !uploadedImage) {
-      toast.error('No uploaded image available to save');
+    if (!suggestion || !suggestion.generatedImageUrl) {
+      toast.error('No image available to save');
       return;
     }
 
@@ -72,49 +67,35 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
     setIsSaving(true);
     
     try {
-      console.log('Saving ad with uploaded image');
+      console.log('Saving ad with image URL:', suggestion.generatedImageUrl);
       
-      // Convert uploaded image to base64 for saving
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64Data = reader.result as string;
-        
-        const result = await saveGeneratedAdImage(
-          uploadedImageUrl,
-          suggestion.id,
-          suggestion.headline,
-          suggestion.description,
-          suggestion.platform,
-          suggestion.revisedPrompt,
-          base64Data
-        );
-        
-        if (result.success) {
-          toast.success(result.message);
-          onOpenChange(false);
-        } else {
-          toast.error(result.message);
-        }
-        setIsSaving(false);
-      };
+      const result = await saveGeneratedAdImage(
+        suggestion.generatedImageUrl,
+        suggestion.id,
+        suggestion.headline,
+        suggestion.description,
+        suggestion.platform,
+        suggestion.revisedPrompt,
+        null // No base64 data, let the service handle URL fetching
+      );
       
-      reader.onerror = () => {
-        toast.error('Failed to process image');
-        setIsSaving(false);
-      };
-      
-      reader.readAsDataURL(uploadedImage);
-      
+      if (result.success) {
+        toast.success(result.message);
+        onOpenChange(false);
+      } else {
+        toast.error(result.message);
+      }
     } catch (error) {
       console.error('Error saving ad:', error);
       toast.error('Failed to save the ad image');
+    } finally {
       setIsSaving(false);
     }
   };
 
   const handleOpenImage = () => {
-    if (uploadedImageUrl) {
-      window.open(uploadedImageUrl, '_blank');
+    if (suggestion?.generatedImageUrl) {
+      window.open(suggestion.generatedImageUrl, '_blank');
     }
   };
 
@@ -144,78 +125,111 @@ const AdSuggestionDetailPopup: React.FC<AdSuggestionDetailPopupProps> = ({
               <p>{suggestion.description}</p>
             </div>
             
-            {/* Uploaded Image */}
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-1">Uploaded Image</h3>
-              <div className="bg-muted/30 p-4 rounded-lg">
-                {!uploadedImage ? (
-                  <div className="w-full h-48 bg-muted rounded-md border border-dashed border-border flex flex-col items-center justify-center p-4">
-                    <AlertTriangle className="h-8 w-8 text-amber-500 mb-2" />
-                    <p className="text-sm text-muted-foreground text-center">No image uploaded</p>
-                    <p className="text-xs text-muted-foreground text-center mt-1">Upload an image to see it here</p>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="relative">
-                      <img 
-                        src={uploadedImageUrl!} 
-                        alt="Uploaded image" 
-                        className={`w-full rounded-md border shadow-sm transition-all ${
-                          isImageSelected ? 'ring-2 ring-green-500 ring-offset-2' : ''
-                        }`}
-                        onError={() => setImageError(true)}
-                      />
-                      
-                      {/* Selection overlay */}
-                      {isImageSelected && (
-                        <div className="absolute top-2 left-2 bg-green-500 text-white p-2 rounded-full shadow-md">
-                          <Check className="h-4 w-4" />
-                        </div>
-                      )}
-                      
-                      {/* Open in new tab button */}
-                      <Button
-                        variant="outline"
+            {/* Image */}
+            {suggestion.generatedImageUrl && (
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Generated Image</h3>
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  {isImageLoading ? (
+                    <div className="w-full h-48 bg-muted rounded-md border border-dashed border-border flex items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      <p className="ml-2 text-sm text-muted-foreground">Loading image...</p>
+                    </div>
+                  ) : imageError ? (
+                    <div className="w-full h-48 bg-muted rounded-md border border-dashed border-border flex flex-col items-center justify-center p-4">
+                      <AlertTriangle className="h-8 w-8 text-amber-500 mb-2" />
+                      <p className="text-sm text-muted-foreground text-center mb-2">Unable to display image directly</p>
+                      <Button 
+                        variant="default" 
                         size="sm"
-                        className="absolute top-2 right-2 bg-white/80 hover:bg-white"
                         onClick={handleOpenImage}
+                        className="mb-2"
                       >
-                        <ExternalLink className="h-4 w-4" />
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Open Image in New Tab
                       </Button>
-                      
-                      {/* Select button overlay when not selected */}
-                      {!isImageSelected && (
-                        <div 
-                          className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity rounded-md flex items-center justify-center cursor-pointer"
-                          onClick={handleSelectImage}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleSelectImage}
+                        disabled={isImageSelected}
+                      >
+                        {isImageSelected ? (
+                          <>
+                            <Check className="h-4 w-4 mr-2" />
+                            Selected
+                          </>
+                        ) : (
+                          'Select Image'
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="relative">
+                        <img 
+                          src={suggestion.generatedImageUrl} 
+                          alt="Generated ad" 
+                          className={`w-full rounded-md border shadow-sm transition-all ${
+                            isImageSelected ? 'ring-2 ring-green-500 ring-offset-2' : ''
+                          }`}
+                          onError={() => setImageError(true)}
+                          onLoad={() => setIsImageLoading(false)}
+                          crossOrigin="anonymous"
+                          referrerPolicy="no-referrer"
+                        />
+                        
+                        {/* Selection overlay */}
+                        {isImageSelected && (
+                          <div className="absolute top-2 left-2 bg-green-500 text-white p-2 rounded-full shadow-md">
+                            <Check className="h-4 w-4" />
+                          </div>
+                        )}
+                        
+                        {/* Open in new tab button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+                          onClick={handleOpenImage}
                         >
-                          <Button variant="secondary" size="sm">
-                            Select Image
-                          </Button>
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                        
+                        {/* Select button overlay when not selected */}
+                        {!isImageSelected && (
+                          <div 
+                            className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity rounded-md flex items-center justify-center cursor-pointer"
+                            onClick={handleSelectImage}
+                          >
+                            <Button variant="secondary" size="sm">
+                              Select Image
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Dimensions: {suggestion.dimensions}
+                      </p>
+                      
+                      {!isImageSelected ? (
+                        <p className="text-xs text-blue-600 mt-1">
+                          Click on the image to select it for saving
+                        </p>
+                      ) : (
+                        <div className="flex items-center gap-2 mt-2">
+                          <Check className="h-3 w-3 text-green-600" />
+                          <p className="text-xs text-green-600">
+                            Image selected and ready to save
+                          </p>
                         </div>
                       )}
                     </div>
-                    
-                    <p className="text-xs text-muted-foreground mt-2">
-                      File: {uploadedImage.name}
-                    </p>
-                    
-                    {!isImageSelected ? (
-                      <p className="text-xs text-blue-600 mt-1">
-                        Click on the image to select it for saving
-                      </p>
-                    ) : (
-                      <div className="flex items-center gap-2 mt-2">
-                        <Check className="h-3 w-3 text-green-600" />
-                        <p className="text-xs text-green-600">
-                          Image selected and ready to save
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
+            )}
             
             {/* Image Recommendation */}
             <div>
@@ -307,7 +321,7 @@ By following this structure and ensuring all security measures are in place, you
             <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
           </div>
           
-          {uploadedImage && (
+          {suggestion.generatedImageUrl && (
             <div className="flex gap-2 w-full sm:w-auto">
               <Button 
                 variant={isImageSelected ? "default" : "secondary"}
