@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { AdSuggestion } from '@/types/ad-types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -297,6 +298,7 @@ Enhance security by implementing multi-factor authentication, encrypting sensiti
 Yes, it can be safe if all recommended security measures are properly implemented and routinely updated.
 
 By following this structure and ensuring all security measures are in place, you can effectively manage and secure your Supabase database, keeping your data protected from potential threats.`}
+                  </div>
                 </div>
               </div>
 
